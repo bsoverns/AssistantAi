@@ -26,6 +26,7 @@ using Newtonsoft.Json.Linq;
 using YourNamespace;
 using System.Drawing;
 using System.Configuration;
+using System.Windows.Threading;
 
 namespace AssistantAi
 {
@@ -78,6 +79,8 @@ namespace AssistantAi
     public partial class MainWindow : Window
     {
         public AudioRecorder audioRecorder = new AudioRecorder();
+        public DispatcherTimer countdownTimer;
+        public int countdownValue = 10; 
 
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
@@ -95,7 +98,8 @@ namespace AssistantAi
 
         public MainWindow()
         {
-            InitializeComponent();                                  
+            InitializeComponent();
+            InitializeCountdownTimer();
             SetDefaultsAsync();            
         }       
 
@@ -110,6 +114,7 @@ namespace AssistantAi
                 //Text question
                 await SendMessage();
 
+                /* All test code below; do not remove
                 //Whisper Speech return test
                 //string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
                 //speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
@@ -132,7 +137,8 @@ namespace AssistantAi
 
                 //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"transcriptions");
                 //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"translations");
-                //txtAssistantResponse.Text = response;                
+                //txtAssistantResponse.Text = response;  
+                */
             }
 
             btnSend.IsEnabled = true;
@@ -188,7 +194,7 @@ namespace AssistantAi
                     //string sAnswer = SendMsg(sQuestion) + "";
                     string sAnswer = await SendMsgAsync(sQuestion) + "";
                     await AssistantResponseWindow("Chat GPT: ", sAnswer);
-                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudtioVoice.Text);               
+                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudioVoice.Text);               
                 }
 
                 catch (Exception ex)
@@ -399,12 +405,12 @@ namespace AssistantAi
             cmbWhisperModel.Items.Add("transcriptions");
             cmbWhisperModel.Items.Add("translations");
 
-            cmbAudtioVoice.Items.Add("alloy");
-            cmbAudtioVoice.Items.Add("echo");
-            cmbAudtioVoice.Items.Add("fable");
-            cmbAudtioVoice.Items.Add("onyx");
-            cmbAudtioVoice.Items.Add("nova");
-            cmbAudtioVoice.Items.Add("shimmer");
+            cmbAudioVoice.Items.Add("alloy");
+            cmbAudioVoice.Items.Add("echo");
+            cmbAudioVoice.Items.Add("fable");
+            cmbAudioVoice.Items.Add("onyx");
+            cmbAudioVoice.Items.Add("nova");
+            cmbAudioVoice.Items.Add("shimmer");
 
             // Set text for txtMaxTokens
             txtMaxTokens.Text = "2048";
@@ -416,7 +422,7 @@ namespace AssistantAi
             // Select default items by value
             cmbModel.SelectedItem = defaultChatGptModel;
             cmbWhisperModel.SelectedItem = defaultWhisperModel;
-            cmbAudtioVoice.SelectedItem = defaultAudioVoice;            
+            cmbAudioVoice.SelectedItem = defaultAudioVoice;            
 
             // Set colors and fonts for txtQuestion
             txtQuestion.Background = new SolidColorBrush(Colors.Black);
@@ -429,11 +435,6 @@ namespace AssistantAi
             txtAssistantResponse.Foreground = new SolidColorBrush(Colors.White);
             txtAssistantResponse.FontFamily = new System.Windows.Media.FontFamily("Courier New");
             txtAssistantResponse.FontSize = 15; // This sets the font size to 15
-
-            txtWhisperSpeechResponse.Background = new SolidColorBrush(Colors.Gray);
-            txtWhisperSpeechResponse.Foreground = new SolidColorBrush(Colors.Black);
-            txtWhisperSpeechResponse.FontFamily = new System.Windows.Media.FontFamily("Courier New");
-            txtWhisperSpeechResponse.FontSize = 15; // This sets the font size to 15
 
             // Set default text for testing
             //txtQuestion.Text = "This is a test of an API key, are you receiving this?";
@@ -472,11 +473,13 @@ namespace AssistantAi
             try
             {
                 txtAssistantResponse.AppendText("\r\n" + typeResponse + response.Replace("\n", "\r\n").Trim() + "\r\n");
+                txtAssistantResponse.ScrollToEnd();
             }
 
             catch (Exception ex)
             {
                 txtAssistantResponse.AppendText("Error: " + ex.Message);
+                txtAssistantResponse.ScrollToEnd();
             }
         }
 
@@ -484,11 +487,15 @@ namespace AssistantAi
         {
             btnSend.IsEnabled = false;
             btnClear.IsEnabled = false;
-            StartAudioRecording();
+            countdownValue = 10; // reset countdown
+            ListeningModeProgressBar.Value = countdownValue; // reset progress bar
+            StartAudioRecording();            
+            countdownTimer.Start(); // start countdown
         }
 
         private async void ckbxListeningMode_Unchecked(object sender, RoutedEventArgs e)
         {
+            countdownTimer.Stop();
             StopAudioRecording();
             string whisperType = cmbWhisperModel.Text;
             var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", whisperType);
@@ -517,7 +524,7 @@ namespace AssistantAi
 
                         //string sAnswer = SendMsg(sQuestion) + "";
                         await AssistantResponseWindow("Whisper Translate: ", response);
-                        await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudtioVoice.Text);
+                        await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.Text);
                     }
 
                     catch (Exception ex)
@@ -555,6 +562,26 @@ namespace AssistantAi
         private void StopAudioRecording()
         {
             audioRecorder.StopRecording();
+        }
+
+        private void InitializeCountdownTimer()
+        {
+            countdownTimer = new DispatcherTimer();
+            countdownTimer.Interval = TimeSpan.FromSeconds(1);
+            countdownTimer.Tick += CountdownTimer_Tick;
+            ListeningModeProgressBar.Maximum = countdownValue;
+        }
+
+        private void CountdownTimer_Tick(object sender, EventArgs e)
+        {
+            countdownValue--;
+            ListeningModeProgressBar.Value = countdownValue;
+
+            if (countdownValue <= 0)
+            {
+                countdownTimer.Stop();
+                ckbxListeningMode.IsChecked = false; 
+            }
         }
 
         private void txtQuestion_TextChanged(object sender, TextChangedEventArgs e)
