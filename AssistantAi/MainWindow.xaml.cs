@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,6 +15,7 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Web;
+using AssistantAi.Classes;
 
 namespace AssistantAi
 {
@@ -64,14 +67,14 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        string defaultChatGptModel = @"gpt-3.5-turbo", defaultWhisperModel = @"transcriptions", defaultAudioVoice = @"onyx";
+        string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), openAIApiKey = @"", defaultChatGptModel = @"gpt-3.5-turbo", defaultWhisperModel = @"transcriptions", defaultAudioVoice = @"onyx";
         int tokenCount = 0;
-        double estimatedCost = 0;
+        double estimatedCost = 0;        
 
         public MainWindow()
         {
-            InitializeComponent();
-            SetDefaults();
+            InitializeComponent();                                  
+            SetDefaultsAsync();            
         }       
 
         private async void OnSendButtonClick(object sender, RoutedEventArgs e)
@@ -87,7 +90,7 @@ namespace AssistantAi
             txtAssistantResponse.Text = string.Empty;
         }
 
-        private void SetDefaults()
+        private async Task SetDefaultsAsync()
         {
             // Add default user
             txtUserId.Text = @"1";
@@ -140,6 +143,32 @@ namespace AssistantAi
 
             // Set default text for txtQuestion
             txtQuestion.Text = "This is a test of an API key, are you receiving this?";
+
+            await LoadApiKey();
+            await CheckApiKey();
+        }
+
+        private async Task CheckApiKey()
+        {
+            string apiKeyPathway = System.IO.Path.Combine(programLocation, @"Files\ApiKey.json");
+
+            if (openAIApiKey == "" || openAIApiKey == null)
+            {
+                OpenAiKeyRequest openAiKeyRequestPageOpen = new OpenAiKeyRequest(apiKeyPathway, openAIApiKey);
+                openAiKeyRequestPageOpen.ShowDialog();
+
+                await LoadApiKey();
+
+                if (openAIApiKey == "" || openAIApiKey == null)
+                {
+                    AssistantControls.IsEnabled = false;
+                }
+
+                else
+                {
+                    AssistantControls.IsEnabled = true;
+                }           
+            }                
         }
 
         private void txtQuestion_TextChanged(object sender, TextChangedEventArgs e)
@@ -158,7 +187,6 @@ namespace AssistantAi
 
             if (tokenCount < Convert.ToInt32(txtMaxTokens.Text) && estimatedCost < Convert.ToDouble(txtMaxDollars.Text))
                 pass = true;
-            //double estimatedCost = 0;
 
             return pass;
         }
@@ -212,5 +240,27 @@ namespace AssistantAi
                 throw new ArgumentException($"Model name '{modelName}' is not recognized.");
             }
         }
+
+        public async Task LoadApiKey()
+        {
+            string apiKeyPathway = System.IO.Path.Combine(programLocation, @"Files\ApiKey.json"); // Assuming the file is named ApiKey.json
+            var workBench = new AssistantAi.Classes.OpenAiWorkBench();
+
+            // Destructure the tuple into two variables: isLoaded and config
+            var (isLoaded, config) = await workBench.LoadFromFileAsync(apiKeyPathway);
+
+            if (isLoaded && config != null)
+            {
+                openAIApiKey = config.OpenAiKey;
+                Console.WriteLine($"OpenAI API Key loaded: {config.OpenAiKey}");
+                // You can now use config.OpenAiKey in your application.
+            }
+            else
+            {
+                Console.WriteLine("Failed to load the OpenAI API Key.");
+                // Handle the failure case as needed.
+            }
+        }
+
     }
 }

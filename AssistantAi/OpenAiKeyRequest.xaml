@@ -1,0 +1,35 @@
+﻿<Window x:Class="AssistantAi.OpenAiKeyRequest"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        mc:Ignorable="d"
+        Title="OpenAI Key" Height="125" Width="635" WindowStartupLocation="CenterScreen" 
+        ResizeMode="NoResize">
+
+    <Border Padding="10">
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="104*"/>
+                <ColumnDefinition Width="491*"/>
+            </Grid.ColumnDefinitions>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+            </Grid.RowDefinitions>
+            <GroupBox Header="API Key" Visibility="Visible" Grid.Row="0" Grid.ColumnSpan="2">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <Label Content="OpenAI API Key: " Grid.Column="0" Margin="8,8,0,0" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                    <TextBox Name="txtOpenAiKey" Grid.Column="1" Margin="0,8,0,0" Height="25" HorizontalAlignment="Left" VerticalAlignment="Center" Width="375"/>
+                    <Button Name="Save" Content="Save" Grid.Column="2" Height="25" Width="40" HorizontalAlignment="Left" Margin="8,8,0,0" Click="Save_Click"/>
+                    <Button Name="Clear" Content="Clear" Grid.Column="3" Height="25" Width="40" HorizontalAlignment="Left" Margin="8,8,0,0" Click="Clear_Click"/>
+                </Grid>
+            </GroupBox>
+        </Grid>
+    </Border>
+</Window>

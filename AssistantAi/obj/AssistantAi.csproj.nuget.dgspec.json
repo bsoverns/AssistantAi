@@ -11,7 +11,7 @@
         "projectName": "AssistantAi",
         "projectPath": "D:\\Sandbox\\AssistantAi\\AssistantAi\\AssistantAi.csproj",
         "packagesPath": "C:\\Users\\bsove\\.nuget\\packages\\",
-        "outputPath": "D:\\Sandbox\\AssistantAI\\AssistantAi\\obj\\",
+        "outputPath": "D:\\Sandbox\\AssistantAi\\AssistantAi\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
@@ -44,6 +44,12 @@
       "frameworks": {
         "net7.0-windows7.0": {
           "targetAlias": "net7.0-windows",
+          "dependencies": {
+            "Newtonsoft.Json": {
+              "target": "Package",
+              "version": "[13.0.3, )"
+            }
+          },
           "imports": [
             "net461",
             "net462",
