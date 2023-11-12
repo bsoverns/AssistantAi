@@ -1,6 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Net.Http.Headers;
+using System.Reflection;
+using System.Security.Authentication;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
@@ -13,6 +19,10 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Web;
+using AssistantAi.Classes;
+using System.Windows.Media.Media3D;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 
 namespace AssistantAi
 {
@@ -64,14 +74,15 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        string defaultChatGptModel = @"gpt-3.5-turbo", defaultWhisperModel = @"transcriptions", defaultAudioVoice = @"onyx";
+        string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), openAIApiKey = @"", defaultChatGptModel = @"gpt-3.5-turbo", defaultWhisperModel = @"transcriptions", defaultAudioVoice = @"onyx";
+        List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k" };
         int tokenCount = 0;
-        double estimatedCost = 0;
+        double estimatedCost = 0;        
 
         public MainWindow()
         {
-            InitializeComponent();
-            SetDefaults();
+            InitializeComponent();                                  
+            SetDefaultsAsync();            
         }       
 
         private async void OnSendButtonClick(object sender, RoutedEventArgs e)
@@ -79,6 +90,10 @@ namespace AssistantAi
             if (!CostCheck())
                 MessageBox.Show("Either the token or the cost threshold is too high for your default settings.\r\n\r\nEither adjust your token/cost threshold or rephrase your question.");
 
+            else
+            {
+                await SendMessage();
+            }
             
         }
 
@@ -87,7 +102,111 @@ namespace AssistantAi
             txtAssistantResponse.Text = string.Empty;
         }
 
-        private void SetDefaults()
+        private async Task SendMessage()
+        {
+            string sQuestion = txtQuestion.Text;
+            if (string.IsNullOrEmpty(sQuestion))
+            {
+                MessageBox.Show("Type in your question!");
+                txtQuestion.Focus();
+                return;
+            }
+
+            if (txtAssistantResponse.Text != "")
+            {
+                txtAssistantResponse.AppendText("\r\n");
+            }
+
+            txtAssistantResponse.AppendText("Me: " + sQuestion);
+            txtQuestion.Text = "";
+
+            try
+            {
+                //string sAnswer = SendMsg(sQuestion) + "";
+                string sAnswer = await SendMsgAsync(sQuestion) + "";
+                txtAssistantResponse.AppendText("\r\nChat GPT: " + sAnswer.Replace("\n", "\r\n").Trim() + "\r\n");                
+            }
+
+            catch (Exception ex)
+            {
+                txtAssistantResponse.AppendText("Error: " + ex.Message);
+            }
+        }
+
+        public async Task<string> SendMsgAsync(string sQuestion)
+        {
+            string sModel = cmbModel.Text;
+            string sUrl = "https://api.openai.com/v1/completions";
+
+            if (models.Any(sub => sModel.Contains(sub)))
+            {
+                sUrl = "https://api.openai.com/v1/chat/completions";
+            }
+
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
+
+                object payload;
+                if (models.Any(sub => sModel.Contains(sub)))
+                {
+                    payload = new
+                    {
+                        model = sModel,
+                        messages = new[] { new { role = "user", content = PadQuotes(sQuestion) } }
+                    };
+                }
+                else
+                {
+                    payload = new
+                    {
+                        model = sModel,
+                        prompt = PadQuotes(sQuestion),
+                        max_tokens = int.Parse(txtMaxTokens.Text),
+                        temperature = double.Parse(txtTemperature.Text),
+                        // Other parameters if needed
+                    };
+                }
+
+                var data = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(data, Encoding.UTF8, "application/json");
+
+                try
+                {
+                    var response = await httpClient.PostAsync(sUrl, content);
+                    response.EnsureSuccessStatusCode();
+
+                    var sJson = await response.Content.ReadAsStringAsync();
+
+                    // Deserialize the JSON response
+                    var oJson = JsonConvert.DeserializeObject<Dictionary<string, object>>(sJson);
+                    var oChoices = (JArray)oJson["choices"]; // Changed to JArray
+                    var oChoice = (JObject)oChoices[0]; // Changed to JObject
+                    string sResponse = "";
+
+                    if (models.Any(sub => sModel.Contains(sub)))
+                    {
+                        var oMessage = (JObject)oChoice["message"];
+                        sResponse = (string)oMessage["content"];
+                    }
+                    else
+                    {
+                        sResponse = (string)oChoice["text"];
+                    }
+
+                    return sResponse;
+                }
+
+                catch (HttpRequestException e)
+                {
+                    // Handle exception.
+                    Console.WriteLine($"Request exception: {e.Message}");
+                    return "";
+                }
+            }
+        }
+
+        private async Task SetDefaultsAsync()
         {
             // Add default user
             txtUserId.Text = @"1";
@@ -140,6 +259,32 @@ namespace AssistantAi
 
             // Set default text for txtQuestion
             txtQuestion.Text = "This is a test of an API key, are you receiving this?";
+
+            await LoadApiKey();
+            await CheckApiKey();
+        }
+
+        private async Task CheckApiKey()
+        {
+            string apiKeyPathway = System.IO.Path.Combine(programLocation, @"Files\ApiKey.json");
+
+            if (openAIApiKey == "" || openAIApiKey == null)
+            {
+                OpenAiKeyRequest openAiKeyRequestPageOpen = new OpenAiKeyRequest(apiKeyPathway, openAIApiKey);
+                openAiKeyRequestPageOpen.ShowDialog();
+
+                await LoadApiKey();
+
+                if (openAIApiKey == "" || openAIApiKey == null)
+                {
+                    AssistantControls.IsEnabled = false;
+                }
+
+                else
+                {
+                    AssistantControls.IsEnabled = true;
+                }           
+            }                
         }
 
         private void txtQuestion_TextChanged(object sender, TextChangedEventArgs e)
@@ -158,7 +303,6 @@ namespace AssistantAi
 
             if (tokenCount < Convert.ToInt32(txtMaxTokens.Text) && estimatedCost < Convert.ToDouble(txtMaxDollars.Text))
                 pass = true;
-            //double estimatedCost = 0;
 
             return pass;
         }
@@ -211,6 +355,50 @@ namespace AssistantAi
             {
                 throw new ArgumentException($"Model name '{modelName}' is not recognized.");
             }
+        }
+
+        public async Task LoadApiKey()
+        {
+            string apiKeyPathway = System.IO.Path.Combine(programLocation, @"Files\ApiKey.json"); // Assuming the file is named ApiKey.json
+            var workBench = new AssistantAi.Classes.OpenAiWorkBench();
+
+            // Destructure the tuple into two variables: isLoaded and config
+            var (isLoaded, config) = await workBench.LoadFromFileAsync(apiKeyPathway);
+
+            if (isLoaded && config != null)
+            {
+                openAIApiKey = config.OpenAiKey;
+                Console.WriteLine($"OpenAI API Key loaded: {config.OpenAiKey}");
+                // You can now use config.OpenAiKey in your application.
+            }
+            else
+            {
+                Console.WriteLine("Failed to load the OpenAI API Key.");
+                // Handle the failure case as needed.
+            }
+        }
+
+        private string PadQuotes(string s)
+        {
+            if (s.IndexOf("\\") != -1)
+                s = s.Replace("\\", "\\\\");
+
+            if (s.IndexOf("\r\n") != -1)
+                s = s.Replace("\r\n", "\\n");
+
+            if (s.IndexOf("\r") != -1)
+                s = s.Replace("\r", "\\r");
+
+            if (s.IndexOf("\n") != -1)
+                s = s.Replace("\n", "\\n");
+
+            if (s.IndexOf("\t") != -1)
+                s = s.Replace("\t", "\\t");
+
+            if (s.IndexOf("\"") != -1)
+                return s.Replace("\"", "\\\"");
+            else
+                return s;
         }
     }
 }

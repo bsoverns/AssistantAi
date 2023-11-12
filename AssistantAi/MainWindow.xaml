@@ -33,7 +33,7 @@
                 </Grid>
             </GroupBox>
 
-            <GroupBox Header="Controls" Grid.Row="1" Visibility="Visible">
+            <GroupBox Name="AssistantControls" Header="Controls" Grid.Row="1" Visibility="Visible">
                 <Grid>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto"/>                        
@@ -133,8 +133,7 @@
                              AcceptsReturn="True"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                             IsReadOnly="True"
-                             Text="test"/>
+                             IsReadOnly="True"/>
                 </Grid>
             </GroupBox>
         </Grid>
