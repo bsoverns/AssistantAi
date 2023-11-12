@@ -222,39 +222,6 @@ namespace AssistantAi
             }
         }
 
-        //public void WhisperTextToSpeech(string outputFilePath, string textToConvert, string voiceModel)
-        //{
-        //    string sUrl = "https://api.openai.com/v1/audio/speech";
-
-        //    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(sUrl);
-        //    request.Method = "POST";
-        //    request.Headers.Add("Authorization", "Bearer " + openAIApiKey);
-        //    request.ContentType = "application/json";
-
-        //    using (var requestStream = request.GetRequestStream())
-        //    {
-        //        // Create the JSON payload
-        //        string jsonPayload = $"{{\"model\": \"tts-1\", \"input\": \"{textToConvert}\", \"voice\": \"{voiceModel}\"}}";
-        //        byte[] jsonBytes = System.Text.Encoding.UTF8.GetBytes(jsonPayload);
-        //        requestStream.Write(jsonBytes, 0, jsonBytes.Length);
-        //    }
-
-        //    // Get the response
-        //    using (var response = (HttpWebResponse)request.GetResponse())
-        //    {
-        //        using (var responseStream = response.GetResponseStream())
-        //        {
-        //            // Save the response stream (MP3 file) to a file
-        //            using (var fileStream = File.OpenWrite(outputFilePath))
-        //            {
-        //                responseStream.CopyTo(fileStream);
-        //            }
-        //        }
-        //    }
-
-        //    //PlayMp3File(outputFilePath);
-        //}
-
         public async Task WhisperTextToSpeechAsync(string outputFilePath, string textToConvert, string voiceModel)
         {
             string sUrl = "https://api.openai.com/v1/audio/speech";
@@ -299,6 +266,21 @@ namespace AssistantAi
             }
         }
 
+        private void PlayMp3File(string filePath)
+        {
+            var mediaPlayer = new MediaPlayer();
+
+            mediaPlayer.Open(new Uri(filePath));
+
+            mediaPlayer.Play();
+
+            // Event handler for the MediaEnded event to dispose of the MediaPlayer once playback is finished
+            mediaPlayer.MediaEnded += (sender, e) =>
+            {
+                mediaPlayer.Close();
+                DeleteFile(filePath); // Ensure DeleteFile is thread-safe or dispatch it to the UI thread if necessary
+            };
+        }
 
         private void DeleteFile(string filePath)
         {
