@@ -133,8 +133,7 @@
                              AcceptsReturn="True"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                             IsReadOnly="True"
-                             Text="test"/>
+                             IsReadOnly="True"/>
                 </Grid>
             </GroupBox>
         </Grid>

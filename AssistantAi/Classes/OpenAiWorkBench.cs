@@ -19,12 +19,12 @@ namespace AssistantAi.Classes
             {
                 string json = await File.ReadAllTextAsync(filePath);
                 var config = JsonConvert.DeserializeObject<OpenAiConfig>(json);
-                return (true, config); // Return true and the config
+                return (true, config); 
             }
             catch (Exception ex)
             {
                 Console.WriteLine("An error occurred while loading the file: " + ex.Message);
-                return (false, null); // Return false and null
+                return (false, null); 
             }
         }
 
@@ -38,7 +38,6 @@ namespace AssistantAi.Classes
                     Directory.CreateDirectory(directory);
                 }
 
-                // Ensure the file exists, create it if it does not
                 if (!File.Exists(filePath))
                 {
                     using (var stream = File.Create(filePath)) { }
@@ -46,12 +45,12 @@ namespace AssistantAi.Classes
 
                 string json = JsonConvert.SerializeObject(config, Formatting.Indented);
                 await File.WriteAllTextAsync(filePath, json);
-                return true; // Return true on success
+                return true; 
             }
             catch (Exception ex)
             {
                 Console.WriteLine("An error occurred while saving the file: " + ex.Message);
-                return false; // Return false on failure
+                return false; 
             }
         }
     }
