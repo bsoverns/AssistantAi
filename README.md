@@ -1,2 +1,2 @@
 # AssistantAi
-WPF Program designed to interact with a user and OpenAi endpoints
+WPF Program designed to interact with a user and OpenAI endpoints
