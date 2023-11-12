@@ -102,32 +102,32 @@ namespace AssistantAi
 
             else
             {
-                //Text quest
-                //await SendMessage();
+                //Text question
+                await SendMessage();
 
-                //Speech return test
+                //Whisper Speech return test
                 //string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
                 //speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
-
                 //Directory.CreateDirectory(speechDirectory);
-                //WhisperTextToSpeechAsync(speechRecordingPath, txtQuestion.Text, @"onyx");
+                //txtWhisperSpeechResponse.Text = txtQuestion.Text;
+                //await WhisperTextToSpeechAsync(speechRecordingPath, txtQuestion.Text, @"onyx");                
 
-                //Whisper
-                string fileName = $"Record_{DateTime.Now:yyyyMMddHHmmss}.wav";
-                Directory.CreateDirectory(recordingsDirectory);
+                //Whisper Transcriptions
+                //string fileName = $"Record_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                //Directory.CreateDirectory(recordingsDirectory);
                 //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);               
-
-                //Transcriptions
                 //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Recording.m4a");
 
-                //Translations
+                //Whisper Translations
+                //string fileName = $"Record_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                //Directory.CreateDirectory(recordingsDirectory);
                 //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "German.m4a");
                 //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Telugu.m4a");
-                currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Polish.m4a");
+                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Polish.m4a");
 
                 //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"transcriptions");
-                var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"translations");
-                txtAssistantResponse.Text = response;                
+                //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"translations");
+                //txtAssistantResponse.Text = response;                
             }
 
             btnSend.IsEnabled = true;
@@ -337,7 +337,6 @@ namespace AssistantAi
             }
         }
 
-
         private void DeleteFile(string filePath)
         {
             File.Delete(filePath);
@@ -379,14 +378,7 @@ namespace AssistantAi
             // Select default items by value
             cmbModel.SelectedItem = defaultChatGptModel;
             cmbWhisperModel.SelectedItem = defaultWhisperModel;
-            cmbAudtioVoice.SelectedItem = defaultAudioVoice;
-
-            // Set colors and fonts for txtAnswer
-
-            txtAssistantResponse.Background = new SolidColorBrush(Colors.Black);
-            txtAssistantResponse.Foreground = new SolidColorBrush(Colors.White);
-            txtAssistantResponse.FontFamily = new FontFamily("Courier New");
-            txtAssistantResponse.FontSize = 15; // This sets the font size to 15
+            cmbAudtioVoice.SelectedItem = defaultAudioVoice;            
 
             // Set colors and fonts for txtQuestion
             txtQuestion.Background = new SolidColorBrush(Colors.Black);
@@ -394,8 +386,21 @@ namespace AssistantAi
             txtQuestion.FontFamily = new FontFamily("Courier New");
             txtQuestion.FontSize = 15; // This sets the font size to 15
 
-            // Set default text for txtQuestion
-            txtQuestion.Text = "This is a test of an API key, are you receiving this?";
+            // Set colors and fonts for txtAssistantResponse
+            txtAssistantResponse.Background = new SolidColorBrush(Colors.Black);
+            txtAssistantResponse.Foreground = new SolidColorBrush(Colors.White);
+            txtAssistantResponse.FontFamily = new FontFamily("Courier New");
+            txtAssistantResponse.FontSize = 15; // This sets the font size to 15
+
+            txtWhisperSpeechResponse.Background = new SolidColorBrush(Colors.Gray);
+            txtWhisperSpeechResponse.Foreground = new SolidColorBrush(Colors.Black);
+            txtWhisperSpeechResponse.FontFamily = new FontFamily("Courier New");
+            txtWhisperSpeechResponse.FontSize = 15; // This sets the font size to 15
+
+            // Set default text for testing
+            //txtQuestion.Text = "This is a test of an API key, are you receiving this?";
+            //txtAssistantResponse.Text = "Response";
+            //txtWhisperSpeechResponse.Text = "Response";
 
             await LoadApiKey();
             await CheckApiKey();

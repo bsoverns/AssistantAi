@@ -117,6 +117,8 @@
             <GroupBox Header="AI - Output" Grid.Row="2" Visibility="Visible">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="2*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
@@ -124,6 +126,8 @@
                     </Grid.RowDefinitions> 
                    
                     <TextBox Name="txtAssistantResponse"
+                             Grid.Column="0"
+                             Grid.ColumnSpan="2"
                              Height="Auto"                     
                              MinHeight="260"
                              HorizontalAlignment="Stretch"                             
@@ -134,6 +138,20 @@
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
                              IsReadOnly="True"/>
+
+                    <TextBox Name="txtWhisperSpeechResponse"
+                            Grid.Column="2"
+                            Height="Auto"                     
+                            MinHeight="260"
+                            HorizontalAlignment="Stretch"                             
+                            VerticalAlignment="Stretch"
+                            Margin="0,0,0,0"
+                            TextWrapping="Wrap"
+                            AcceptsReturn="True"
+                            ScrollViewer.VerticalScrollBarVisibility="Auto"
+                            ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                            IsReadOnly="True"
+                            Cursor="Arrow"/>
                 </Grid>
             </GroupBox>
         </Grid>
