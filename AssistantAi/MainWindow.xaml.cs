@@ -74,7 +74,14 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), openAIApiKey = @"", defaultChatGptModel = @"gpt-3.5-turbo", defaultWhisperModel = @"transcriptions", defaultAudioVoice = @"onyx";
+        string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+            openAIApiKey = @"",
+            defaultChatGptModel = @"gpt-3.5-turbo",
+            defaultWhisperModel = @"transcriptions",
+            defaultAudioVoice = @"onyx",
+            speechDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Speech"),
+            speechRecordingPath;
+
         List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k" };
         int tokenCount = 0;
         double estimatedCost = 0;        
@@ -92,7 +99,16 @@ namespace AssistantAi
 
             else
             {
-                await SendMessage();
+                //Text quest
+                //await SendMessage();
+
+                //Speech return test
+                string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+
+                // Ensure the directory exists
+                Directory.CreateDirectory(speechDirectory);
+                WhisperTextToSpeechAsync(speechRecordingPath, txtQuestion.Text, @"onyx");
             }
             
         }
@@ -204,6 +220,89 @@ namespace AssistantAi
                     return "";
                 }
             }
+        }
+
+        //public void WhisperTextToSpeech(string outputFilePath, string textToConvert, string voiceModel)
+        //{
+        //    string sUrl = "https://api.openai.com/v1/audio/speech";
+
+        //    HttpWebRequest request = (HttpWebRequest)WebRequest.Create(sUrl);
+        //    request.Method = "POST";
+        //    request.Headers.Add("Authorization", "Bearer " + openAIApiKey);
+        //    request.ContentType = "application/json";
+
+        //    using (var requestStream = request.GetRequestStream())
+        //    {
+        //        // Create the JSON payload
+        //        string jsonPayload = $"{{\"model\": \"tts-1\", \"input\": \"{textToConvert}\", \"voice\": \"{voiceModel}\"}}";
+        //        byte[] jsonBytes = System.Text.Encoding.UTF8.GetBytes(jsonPayload);
+        //        requestStream.Write(jsonBytes, 0, jsonBytes.Length);
+        //    }
+
+        //    // Get the response
+        //    using (var response = (HttpWebResponse)request.GetResponse())
+        //    {
+        //        using (var responseStream = response.GetResponseStream())
+        //        {
+        //            // Save the response stream (MP3 file) to a file
+        //            using (var fileStream = File.OpenWrite(outputFilePath))
+        //            {
+        //                responseStream.CopyTo(fileStream);
+        //            }
+        //        }
+        //    }
+
+        //    //PlayMp3File(outputFilePath);
+        //}
+
+        public async Task WhisperTextToSpeechAsync(string outputFilePath, string textToConvert, string voiceModel)
+        {
+            string sUrl = "https://api.openai.com/v1/audio/speech";
+
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
+
+                var payload = new
+                {
+                    model = "tts-1",
+                    input = textToConvert,
+                    voice = voiceModel
+                };
+
+                var jsonPayload = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                try
+                {
+                    var response = await httpClient.PostAsync(sUrl, content);
+                    response.EnsureSuccessStatusCode();
+
+                    using (var responseStream = await response.Content.ReadAsStreamAsync())
+                    {
+                        // Save the response stream (MP3 file) to a file
+                        using (var fileStream = File.OpenWrite(outputFilePath))
+                        {
+                            await responseStream.CopyToAsync(fileStream);
+                        }
+                    }
+
+                    // Optionally play the MP3 file after saving
+                    PlayMp3File(outputFilePath);
+                }
+
+                catch (HttpRequestException e)
+                {
+                    // Handle exception.
+                    Console.WriteLine($"Request exception: {e.Message}");
+                }
+            }
+        }
+
+
+        private void DeleteFile(string filePath)
+        {
+            File.Delete(filePath);
         }
 
         private async Task SetDefaultsAsync()
