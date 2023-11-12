@@ -1,0 +1,142 @@
+﻿<Window x:Class="AssistantAi.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Assistant AI" Height="700" Width="1000" MinHeight="700" MinWidth="1000"
+        WindowStartupLocation="CenterScreen">
+
+    <Border Padding="10">
+        <Grid>
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <!-- For User Input GroupBox -->
+                <RowDefinition Height="Auto"/>
+                <!-- For Controls GroupBox -->
+                <RowDefinition Height="*"/>
+                <!-- For AI Output GroupBox to expand -->
+            </Grid.RowDefinitions>
+
+            <GroupBox Header="User - Input" Grid.Row="0" Visibility="Visible">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBox Name="txtQuestion"
+                             Height="200"
+                             HorizontalAlignment="Stretch"
+                             VerticalAlignment="Bottom"
+                             Margin="0,0,0,0"
+                             AcceptsReturn="True"
+                             TextWrapping="Wrap"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                             TextChanged="txtQuestion_TextChanged"/>
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Header="Controls" Grid.Row="1" Visibility="Visible">
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>                        
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+
+                    <!-- First set of controls -->
+                    <Grid Grid.Row="0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button Name="Send" Content="Send" Grid.Column="0" Click="OnSendButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
+                        <Label Content="User ID" Grid.Column="1" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <TextBox Name="txtUserId" Grid.Column="2" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>                        
+                        <Label Content="Max Tokens" Grid.Column="3" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <TextBox Name="txtMaxTokens" Grid.Column="4" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
+                        <CheckBox Name="ckbxConversationMode" Content="Conversation Mode" Grid.Column="5" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center"/>                        
+                        <Label Content="ChatGpt Model" Grid.Column="7" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <ComboBox Name="cmbModel" Grid.Column="8" Grid.ColumnSpan="2" Margin="8,8,0,0" SelectionChanged="cmbModel_SelectionChanged"/>
+                    </Grid>
+
+                    <!-- Second set of controls -->
+                    <Grid Grid.Row="1">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+
+                        <Button Name="Clear" Content="Clear" Grid.Column="0" Click="OnClearButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
+                        <Label Content="Temperature" Grid.Column="1" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <TextBox Name="txtTemperature" Grid.Column="2" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
+                        <Label Content="Max Dollars" Grid.Column="3" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <TextBox Name="txtMaxDollars" Grid.Column="4" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
+                        <CheckBox Name="ckbxMute" Content="Mute" Grid.Column="5" Margin="8,8,0,0" VerticalAlignment="Center"/>
+                        <Label Content="Voice Model" Grid.Column="7" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <ComboBox Name="cmbAudtioVoice" Grid.Column="8" Grid.ColumnSpan="2"  Margin="8,8,0,0" />
+                    </Grid>
+
+                    <!-- Third set of controls -->
+                    <Grid Grid.Row="2">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+
+                        <Label Name="lblEstimatedTokens" Content="Estimated Tokens = 0" Grid.Column="0" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                        <Label Name="lblEstimatedCost" Content="Estimated Cost = $0.00" Grid.Column="2" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                        <Label Content="Whisper Model" Grid.Column="7" Margin="8,8,0,0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                        <ComboBox Name="cmbWhisperModel" Grid.Column="8" Grid.ColumnSpan="2"  Margin="8,8,0,0"/>
+                    </Grid>
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Header="AI - Output" Grid.Row="2" Visibility="Visible">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="*"/>
+                    </Grid.RowDefinitions> 
+                   
+                    <TextBox Name="txtAssistantResponse"
+                             Height="Auto"                     
+                             MinHeight="260"
+                             HorizontalAlignment="Stretch"                             
+                             VerticalAlignment="Stretch"
+                             Margin="0,0,0,0"
+                             TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                             IsReadOnly="True"
+                             Text="test"/>
+                </Grid>
+            </GroupBox>
+        </Grid>
+    </Border>
+</Window>

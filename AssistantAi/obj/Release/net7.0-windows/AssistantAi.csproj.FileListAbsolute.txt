@@ -1,0 +1,2 @@
+D:\Sandbox\AssistantAI\AssistantAi\obj\Release\net7.0-windows\App.g.cs
+D:\Sandbox\AssistantAI\AssistantAi\obj\Release\net7.0-windows\AssistantAi_MarkupCompile.cache
