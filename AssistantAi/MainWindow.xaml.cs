@@ -74,7 +74,16 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), openAIApiKey = @"", defaultChatGptModel = @"gpt-3.5-turbo", defaultWhisperModel = @"transcriptions", defaultAudioVoice = @"onyx";
+        string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
+            openAIApiKey = @"",
+            defaultChatGptModel = @"gpt-3.5-turbo",
+            defaultWhisperModel = @"transcriptions",
+            defaultAudioVoice = @"onyx",
+            recordingsDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Recordings"),
+            currentRecordingPath, 
+            speechDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Speech"),
+            speechRecordingPath;
+
         List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k" };
         int tokenCount = 0;
         double estimatedCost = 0;        
@@ -87,14 +96,41 @@ namespace AssistantAi
 
         private async void OnSendButtonClick(object sender, RoutedEventArgs e)
         {
+            btnSend.IsEnabled = false;
             if (!CostCheck())
                 MessageBox.Show("Either the token or the cost threshold is too high for your default settings.\r\n\r\nEither adjust your token/cost threshold or rephrase your question.");
 
             else
             {
-                await SendMessage();
+                //Text quest
+                //await SendMessage();
+
+                //Speech return test
+                //string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                //speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+
+                //Directory.CreateDirectory(speechDirectory);
+                //WhisperTextToSpeechAsync(speechRecordingPath, txtQuestion.Text, @"onyx");
+
+                //Whisper
+                string fileName = $"Record_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                Directory.CreateDirectory(recordingsDirectory);
+                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);               
+
+                //Transcriptions
+                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Recording.m4a");
+
+                //Translations
+                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "German.m4a");
+                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Telugu.m4a");
+                currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Polish.m4a");
+
+                //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"transcriptions");
+                var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"translations");
+                txtAssistantResponse.Text = response;                
             }
-            
+
+            btnSend.IsEnabled = true;
         }
 
         private async void OnClearButtonClick(object sender, RoutedEventArgs e)
@@ -204,6 +240,107 @@ namespace AssistantAi
                     return "";
                 }
             }
+        }
+
+        public async Task WhisperTextToSpeechAsync(string outputFilePath, string textToConvert, string voiceModel)
+        {
+            string sUrl = "https://api.openai.com/v1/audio/speech";
+
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
+
+                var payload = new
+                {
+                    model = "tts-1",
+                    input = textToConvert,
+                    voice = voiceModel
+                };
+
+                var jsonPayload = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                try
+                {
+                    var response = await httpClient.PostAsync(sUrl, content);
+                    response.EnsureSuccessStatusCode();
+
+                    using (var responseStream = await response.Content.ReadAsStreamAsync())
+                    {
+                        // Save the response stream (MP3 file) to a file
+                        using (var fileStream = File.OpenWrite(outputFilePath))
+                        {
+                            await responseStream.CopyToAsync(fileStream);
+                        }
+                    }
+
+                    // Optionally play the MP3 file after saving
+                    PlayMp3File(outputFilePath);
+                }
+
+                catch (HttpRequestException e)
+                {
+                    // Handle exception.
+                    Console.WriteLine($"Request exception: {e.Message}");
+                }
+            }
+        }
+
+        private void PlayMp3File(string filePath)
+        {
+            var mediaPlayer = new MediaPlayer();
+
+            mediaPlayer.Open(new Uri(filePath));
+
+            mediaPlayer.Play();
+
+            // Event handler for the MediaEnded event to dispose of the MediaPlayer once playback is finished
+            mediaPlayer.MediaEnded += (sender, e) =>
+            {
+                mediaPlayer.Close();
+                DeleteFile(filePath); // Ensure DeleteFile is thread-safe or dispatch it to the UI thread if necessary
+            };
+        }
+
+        public async Task<string> WhisperMsgAsync(string audioFilePath, string modelName, string modelType)
+        {
+            string sUrl = "https://api.openai.com/v1/audio/" + modelType;
+
+            using (var httpClient = new HttpClient())
+            using (var formData = new MultipartFormDataContent())
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
+
+                // Load the file into a StreamContent
+                byte[] fileBytes = File.ReadAllBytes(audioFilePath);
+                var fileContent = new ByteArrayContent(fileBytes);
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
+                formData.Add(fileContent, "file", System.IO.Path.GetFileName(audioFilePath));
+
+                // Add model name part
+                var modelContent = new StringContent(modelName);
+                formData.Add(modelContent, "model");
+
+                try
+                {
+                    var response = await httpClient.PostAsync(sUrl, formData);
+                    response.EnsureSuccessStatusCode();
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return responseContent;
+                }
+                catch (HttpRequestException ex)
+                {
+                    // Handle exception
+                    Console.WriteLine("An error occurred while sending the request: " + ex.Message);
+                    return null;
+                }
+            }
+        }
+
+
+        private void DeleteFile(string filePath)
+        {
+            File.Delete(filePath);
         }
 
         private async Task SetDefaultsAsync()

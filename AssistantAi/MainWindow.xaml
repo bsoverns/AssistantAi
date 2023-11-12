@@ -56,7 +56,7 @@
                             <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
 
-                        <Button Name="Send" Content="Send" Grid.Column="0" Click="OnSendButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
+                        <Button Name="btnSend" Content="Send" Grid.Column="0" Click="OnSendButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
                         <Label Content="User ID" Grid.Column="1" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <TextBox Name="txtUserId" Grid.Column="2" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>                        
                         <Label Content="Max Tokens" Grid.Column="3" Margin="8,8,0,0" HorizontalAlignment="Right"/>
@@ -81,7 +81,7 @@
                             <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
 
-                        <Button Name="Clear" Content="Clear" Grid.Column="0" Click="OnClearButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
+                        <Button Name="btnClear" Content="Clear" Grid.Column="0" Click="OnClearButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
                         <Label Content="Temperature" Grid.Column="1" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <TextBox Name="txtTemperature" Grid.Column="2" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
                         <Label Content="Max Dollars" Grid.Column="3" Margin="8,8,0,0" HorizontalAlignment="Right"/>
