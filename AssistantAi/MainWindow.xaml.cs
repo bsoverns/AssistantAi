@@ -23,6 +23,9 @@ using AssistantAi.Classes;
 using System.Windows.Media.Media3D;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using YourNamespace;
+using System.Drawing;
+using System.Configuration;
 
 namespace AssistantAi
 {
@@ -74,6 +77,8 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
+        public AudioRecorder audioRecorder = new AudioRecorder();
+
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
             defaultChatGptModel = @"gpt-3.5-turbo",
@@ -156,16 +161,40 @@ namespace AssistantAi
             txtAssistantResponse.AppendText("Me: " + sQuestion);
             txtQuestion.Text = "";
 
-            try
+            if (ckbxMute.IsChecked == true)
             {
-                //string sAnswer = SendMsg(sQuestion) + "";
-                string sAnswer = await SendMsgAsync(sQuestion) + "";
-                txtAssistantResponse.AppendText("\r\nChat GPT: " + sAnswer.Replace("\n", "\r\n").Trim() + "\r\n");                
+                try
+                {
+                    //string sAnswer = SendMsg(sQuestion) + "";
+                    string sAnswer = await SendMsgAsync(sQuestion) + "";
+                    await AssistantResponseWindow("Chat GPT: ", sAnswer);
+                    //txtAssistantResponse.AppendText("\r\nChat GPT: " + sAnswer.Replace("\n", "\r\n").Trim() + "\r\n");                
+                }
+
+                catch (Exception ex)
+                {
+                    txtAssistantResponse.AppendText("Error: " + ex.Message);
+                }
             }
 
-            catch (Exception ex)
+            else
             {
-                txtAssistantResponse.AppendText("Error: " + ex.Message);
+                try
+                {
+                    string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                    speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                    Directory.CreateDirectory(speechDirectory);
+
+                    //string sAnswer = SendMsg(sQuestion) + "";
+                    string sAnswer = await SendMsgAsync(sQuestion) + "";
+                    await AssistantResponseWindow("Chat GPT: ", sAnswer);
+                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudtioVoice.Text);               
+                }
+
+                catch (Exception ex)
+                {
+                    txtAssistantResponse.AppendText("Error: " + ex.Message);
+                }
             }
         }
 
@@ -283,6 +312,8 @@ namespace AssistantAi
                     // Handle exception.
                     Console.WriteLine($"Request exception: {e.Message}");
                 }
+
+
             }
         }
 
@@ -326,13 +357,20 @@ namespace AssistantAi
                     var response = await httpClient.PostAsync(sUrl, formData);
                     response.EnsureSuccessStatusCode();
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    return responseContent;
+                    var parsedResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
+                    return parsedResponse.ContainsKey("text") ? parsedResponse["text"] : string.Empty;
+                    //return responseContent;
                 }
                 catch (HttpRequestException ex)
                 {
                     // Handle exception
                     Console.WriteLine("An error occurred while sending the request: " + ex.Message);
                     return null;
+                }
+
+                finally
+                {
+                    DeleteFile(audioFilePath);
                 }
             }
         }
@@ -383,18 +421,18 @@ namespace AssistantAi
             // Set colors and fonts for txtQuestion
             txtQuestion.Background = new SolidColorBrush(Colors.Black);
             txtQuestion.Foreground = new SolidColorBrush(Colors.White);
-            txtQuestion.FontFamily = new FontFamily("Courier New");
+            txtQuestion.FontFamily = new System.Windows.Media.FontFamily("Courier New");
             txtQuestion.FontSize = 15; // This sets the font size to 15
 
             // Set colors and fonts for txtAssistantResponse
             txtAssistantResponse.Background = new SolidColorBrush(Colors.Black);
             txtAssistantResponse.Foreground = new SolidColorBrush(Colors.White);
-            txtAssistantResponse.FontFamily = new FontFamily("Courier New");
+            txtAssistantResponse.FontFamily = new System.Windows.Media.FontFamily("Courier New");
             txtAssistantResponse.FontSize = 15; // This sets the font size to 15
 
             txtWhisperSpeechResponse.Background = new SolidColorBrush(Colors.Gray);
             txtWhisperSpeechResponse.Foreground = new SolidColorBrush(Colors.Black);
-            txtWhisperSpeechResponse.FontFamily = new FontFamily("Courier New");
+            txtWhisperSpeechResponse.FontFamily = new System.Windows.Media.FontFamily("Courier New");
             txtWhisperSpeechResponse.FontSize = 15; // This sets the font size to 15
 
             // Set default text for testing
@@ -427,6 +465,96 @@ namespace AssistantAi
                     AssistantControls.IsEnabled = true;
                 }           
             }                
+        }
+
+        private async Task AssistantResponseWindow(string typeResponse, string response)
+        {
+            try
+            {
+                txtAssistantResponse.AppendText("\r\n" + typeResponse + response.Replace("\n", "\r\n").Trim() + "\r\n");
+            }
+
+            catch (Exception ex)
+            {
+                txtAssistantResponse.AppendText("Error: " + ex.Message);
+            }
+        }
+
+        private async void ckbxListeningMode_Checked(object sender, RoutedEventArgs e)
+        {
+            btnSend.IsEnabled = false;
+            btnClear.IsEnabled = false;
+            StartAudioRecording();
+        }
+
+        private async void ckbxListeningMode_Unchecked(object sender, RoutedEventArgs e)
+        {
+            StopAudioRecording();
+            string whisperType = cmbWhisperModel.Text;
+            var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", whisperType);
+            if (response != null)
+            {               
+                if (ckbxMute.IsChecked == true)
+                {
+                    try
+                    {
+                        await AssistantResponseWindow("Whisper Translate: ", response);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                    }
+                }
+
+                else
+                {
+                    try
+                    {
+                        string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                        speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                        Directory.CreateDirectory(speechDirectory);
+
+                        //string sAnswer = SendMsg(sQuestion) + "";
+                        await AssistantResponseWindow("Whisper Translate: ", response);
+                        await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudtioVoice.Text);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                    }
+                }
+            }
+
+            btnSend.IsEnabled = true;
+            btnClear.IsEnabled = true;
+        }
+
+        private void StartAudioRecording()
+        {
+            try
+            {
+                // Generate a unique file name for each recording session
+                string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);
+
+                // Ensure the directory exists
+                Directory.CreateDirectory(recordingsDirectory);
+
+                // Start recording to the specified file
+                audioRecorder.StartRecording(currentRecordingPath);
+            }
+
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while starting recording: {ex.Message}");
+            }
+        }
+
+        private void StopAudioRecording()
+        {
+            audioRecorder.StopRecording();
         }
 
         private void txtQuestion_TextChanged(object sender, TextChangedEventArgs e)

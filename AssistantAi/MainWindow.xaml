@@ -61,7 +61,7 @@
                         <TextBox Name="txtUserId" Grid.Column="2" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>                        
                         <Label Content="Max Tokens" Grid.Column="3" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <TextBox Name="txtMaxTokens" Grid.Column="4" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
-                        <CheckBox Name="ckbxConversationMode" Content="Conversation Mode" Grid.Column="5" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center"/>                        
+                        <CheckBox Name="ckbxListeningMode" Content="Translate/Transcribe Mode" Grid.Column="5" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxListeningMode_Checked" Unchecked="ckbxListeningMode_Unchecked"/>                        
                         <Label Content="ChatGpt Model" Grid.Column="7" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <ComboBox Name="cmbModel" Grid.Column="8" Grid.ColumnSpan="2" Margin="8,8,0,0" SelectionChanged="cmbModel_SelectionChanged"/>
                     </Grid>
