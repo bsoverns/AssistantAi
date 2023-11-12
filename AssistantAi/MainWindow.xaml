@@ -61,7 +61,7 @@
                         <TextBox Name="txtUserId" Grid.Column="2" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>                        
                         <Label Content="Max Tokens" Grid.Column="3" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <TextBox Name="txtMaxTokens" Grid.Column="4" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
-                        <CheckBox Name="ckbxConversationMode" Content="Conversation Mode" Grid.Column="5" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center"/>                        
+                        <CheckBox Name="ckbxListeningMode" Content="Translate/Transcribe Mode" Grid.Column="5" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxListeningMode_Checked" Unchecked="ckbxListeningMode_Unchecked"/>                        
                         <Label Content="ChatGpt Model" Grid.Column="7" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <ComboBox Name="cmbModel" Grid.Column="8" Grid.ColumnSpan="2" Margin="8,8,0,0" SelectionChanged="cmbModel_SelectionChanged"/>
                     </Grid>
@@ -86,9 +86,9 @@
                         <TextBox Name="txtTemperature" Grid.Column="2" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
                         <Label Content="Max Dollars" Grid.Column="3" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <TextBox Name="txtMaxDollars" Grid.Column="4" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
-                        <CheckBox Name="ckbxMute" Content="Mute" Grid.Column="5" Margin="8,8,0,0" VerticalAlignment="Center"/>
+                        <CheckBox Name="ckbxMute" Content="Mute Voice" Grid.Column="5" Margin="8,8,0,0" VerticalAlignment="Center"/>
                         <Label Content="Voice Model" Grid.Column="7" Margin="8,8,0,0" HorizontalAlignment="Right"/>
-                        <ComboBox Name="cmbAudtioVoice" Grid.Column="8" Grid.ColumnSpan="2"  Margin="8,8,0,0" />
+                        <ComboBox Name="cmbAudioVoice" Grid.Column="8" Grid.ColumnSpan="2"  Margin="8,8,0,0" />
                     </Grid>
 
                     <!-- Third set of controls -->
@@ -108,6 +108,12 @@
 
                         <Label Name="lblEstimatedTokens" Content="Estimated Tokens = 0" Grid.Column="0" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                         <Label Name="lblEstimatedCost" Content="Estimated Cost = $0.00" Grid.Column="2" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                        <Label Content="Record Max" Grid.Column="4" Margin="8,8,0,0" HorizontalAlignment="Right" />
+                        <StatusBar Grid.Column="5" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
+                            <StatusBarItem>
+                                <ProgressBar Name="ListeningModeProgressBar" Width="175" Height="20" Minimum="0" Maximum="100"/>
+                            </StatusBarItem>
+                        </StatusBar>
                         <Label Content="Whisper Model" Grid.Column="7" Margin="8,8,0,0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
                         <ComboBox Name="cmbWhisperModel" Grid.Column="8" Grid.ColumnSpan="2"  Margin="8,8,0,0"/>
                     </Grid>
@@ -117,6 +123,8 @@
             <GroupBox Header="AI - Output" Grid.Row="2" Visibility="Visible">
                 <Grid>
                     <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="2*"/>
+                        <ColumnDefinition Width="2*"/>
                         <ColumnDefinition Width="*"/>
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
@@ -124,6 +132,8 @@
                     </Grid.RowDefinitions> 
                    
                     <TextBox Name="txtAssistantResponse"
+                             Grid.Column="0"
+                             Grid.ColumnSpan="3"
                              Height="Auto"                     
                              MinHeight="260"
                              HorizontalAlignment="Stretch"                             

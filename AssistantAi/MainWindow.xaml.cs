@@ -23,6 +23,10 @@ using AssistantAi.Classes;
 using System.Windows.Media.Media3D;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
+using YourNamespace;
+using System.Drawing;
+using System.Configuration;
+using System.Windows.Threading;
 
 namespace AssistantAi
 {
@@ -74,6 +78,10 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
+        public AudioRecorder audioRecorder = new AudioRecorder();
+        public DispatcherTimer countdownTimer;
+        public int countdownValue = 10; 
+
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
             defaultChatGptModel = @"gpt-3.5-turbo",
@@ -90,7 +98,8 @@ namespace AssistantAi
 
         public MainWindow()
         {
-            InitializeComponent();                                  
+            InitializeComponent();
+            InitializeCountdownTimer();
             SetDefaultsAsync();            
         }       
 
@@ -102,32 +111,34 @@ namespace AssistantAi
 
             else
             {
-                //Text quest
-                //await SendMessage();
+                //Text question
+                await SendMessage();
 
-                //Speech return test
+                /* All test code below; do not remove
+                //Whisper Speech return test
                 //string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
                 //speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
-
                 //Directory.CreateDirectory(speechDirectory);
-                //WhisperTextToSpeechAsync(speechRecordingPath, txtQuestion.Text, @"onyx");
+                //txtWhisperSpeechResponse.Text = txtQuestion.Text;
+                //await WhisperTextToSpeechAsync(speechRecordingPath, txtQuestion.Text, @"onyx");                
 
-                //Whisper
-                string fileName = $"Record_{DateTime.Now:yyyyMMddHHmmss}.wav";
-                Directory.CreateDirectory(recordingsDirectory);
+                //Whisper Transcriptions
+                //string fileName = $"Record_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                //Directory.CreateDirectory(recordingsDirectory);
                 //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);               
-
-                //Transcriptions
                 //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Recording.m4a");
 
-                //Translations
+                //Whisper Translations
+                //string fileName = $"Record_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                //Directory.CreateDirectory(recordingsDirectory);
                 //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "German.m4a");
                 //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Telugu.m4a");
-                currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Polish.m4a");
+                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Polish.m4a");
 
                 //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"transcriptions");
-                var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"translations");
-                txtAssistantResponse.Text = response;                
+                //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"translations");
+                //txtAssistantResponse.Text = response;  
+                */
             }
 
             btnSend.IsEnabled = true;
@@ -156,16 +167,40 @@ namespace AssistantAi
             txtAssistantResponse.AppendText("Me: " + sQuestion);
             txtQuestion.Text = "";
 
-            try
+            if (ckbxMute.IsChecked == true)
             {
-                //string sAnswer = SendMsg(sQuestion) + "";
-                string sAnswer = await SendMsgAsync(sQuestion) + "";
-                txtAssistantResponse.AppendText("\r\nChat GPT: " + sAnswer.Replace("\n", "\r\n").Trim() + "\r\n");                
+                try
+                {
+                    //string sAnswer = SendMsg(sQuestion) + "";
+                    string sAnswer = await SendMsgAsync(sQuestion) + "";
+                    await AssistantResponseWindow("Chat GPT: ", sAnswer);
+                    //txtAssistantResponse.AppendText("\r\nChat GPT: " + sAnswer.Replace("\n", "\r\n").Trim() + "\r\n");                
+                }
+
+                catch (Exception ex)
+                {
+                    txtAssistantResponse.AppendText("Error: " + ex.Message);
+                }
             }
 
-            catch (Exception ex)
+            else
             {
-                txtAssistantResponse.AppendText("Error: " + ex.Message);
+                try
+                {
+                    string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                    speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                    Directory.CreateDirectory(speechDirectory);
+
+                    //string sAnswer = SendMsg(sQuestion) + "";
+                    string sAnswer = await SendMsgAsync(sQuestion) + "";
+                    await AssistantResponseWindow("Chat GPT: ", sAnswer);
+                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudioVoice.Text);               
+                }
+
+                catch (Exception ex)
+                {
+                    txtAssistantResponse.AppendText("Error: " + ex.Message);
+                }
             }
         }
 
@@ -283,6 +318,8 @@ namespace AssistantAi
                     // Handle exception.
                     Console.WriteLine($"Request exception: {e.Message}");
                 }
+
+
             }
         }
 
@@ -326,7 +363,9 @@ namespace AssistantAi
                     var response = await httpClient.PostAsync(sUrl, formData);
                     response.EnsureSuccessStatusCode();
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    return responseContent;
+                    var parsedResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
+                    return parsedResponse.ContainsKey("text") ? parsedResponse["text"] : string.Empty;
+                    //return responseContent;
                 }
                 catch (HttpRequestException ex)
                 {
@@ -334,9 +373,13 @@ namespace AssistantAi
                     Console.WriteLine("An error occurred while sending the request: " + ex.Message);
                     return null;
                 }
+
+                finally
+                {
+                    DeleteFile(audioFilePath);
+                }
             }
         }
-
 
         private void DeleteFile(string filePath)
         {
@@ -362,12 +405,12 @@ namespace AssistantAi
             cmbWhisperModel.Items.Add("transcriptions");
             cmbWhisperModel.Items.Add("translations");
 
-            cmbAudtioVoice.Items.Add("alloy");
-            cmbAudtioVoice.Items.Add("echo");
-            cmbAudtioVoice.Items.Add("fable");
-            cmbAudtioVoice.Items.Add("onyx");
-            cmbAudtioVoice.Items.Add("nova");
-            cmbAudtioVoice.Items.Add("shimmer");
+            cmbAudioVoice.Items.Add("alloy");
+            cmbAudioVoice.Items.Add("echo");
+            cmbAudioVoice.Items.Add("fable");
+            cmbAudioVoice.Items.Add("onyx");
+            cmbAudioVoice.Items.Add("nova");
+            cmbAudioVoice.Items.Add("shimmer");
 
             // Set text for txtMaxTokens
             txtMaxTokens.Text = "2048";
@@ -379,23 +422,24 @@ namespace AssistantAi
             // Select default items by value
             cmbModel.SelectedItem = defaultChatGptModel;
             cmbWhisperModel.SelectedItem = defaultWhisperModel;
-            cmbAudtioVoice.SelectedItem = defaultAudioVoice;
-
-            // Set colors and fonts for txtAnswer
-
-            txtAssistantResponse.Background = new SolidColorBrush(Colors.Black);
-            txtAssistantResponse.Foreground = new SolidColorBrush(Colors.White);
-            txtAssistantResponse.FontFamily = new FontFamily("Courier New");
-            txtAssistantResponse.FontSize = 15; // This sets the font size to 15
+            cmbAudioVoice.SelectedItem = defaultAudioVoice;            
 
             // Set colors and fonts for txtQuestion
             txtQuestion.Background = new SolidColorBrush(Colors.Black);
             txtQuestion.Foreground = new SolidColorBrush(Colors.White);
-            txtQuestion.FontFamily = new FontFamily("Courier New");
+            txtQuestion.FontFamily = new System.Windows.Media.FontFamily("Courier New");
             txtQuestion.FontSize = 15; // This sets the font size to 15
 
-            // Set default text for txtQuestion
-            txtQuestion.Text = "This is a test of an API key, are you receiving this?";
+            // Set colors and fonts for txtAssistantResponse
+            txtAssistantResponse.Background = new SolidColorBrush(Colors.Black);
+            txtAssistantResponse.Foreground = new SolidColorBrush(Colors.White);
+            txtAssistantResponse.FontFamily = new System.Windows.Media.FontFamily("Courier New");
+            txtAssistantResponse.FontSize = 15; // This sets the font size to 15
+
+            // Set default text for testing
+            //txtQuestion.Text = "This is a test of an API key, are you receiving this?";
+            //txtAssistantResponse.Text = "Response";
+            //txtWhisperSpeechResponse.Text = "Response";
 
             await LoadApiKey();
             await CheckApiKey();
@@ -422,6 +466,122 @@ namespace AssistantAi
                     AssistantControls.IsEnabled = true;
                 }           
             }                
+        }
+
+        private async Task AssistantResponseWindow(string typeResponse, string response)
+        {
+            try
+            {
+                txtAssistantResponse.AppendText("\r\n" + typeResponse + response.Replace("\n", "\r\n").Trim() + "\r\n");
+                txtAssistantResponse.ScrollToEnd();
+            }
+
+            catch (Exception ex)
+            {
+                txtAssistantResponse.AppendText("Error: " + ex.Message);
+                txtAssistantResponse.ScrollToEnd();
+            }
+        }
+
+        private async void ckbxListeningMode_Checked(object sender, RoutedEventArgs e)
+        {
+            btnSend.IsEnabled = false;
+            btnClear.IsEnabled = false;
+            countdownValue = 10; // reset countdown
+            ListeningModeProgressBar.Value = countdownValue; // reset progress bar
+            StartAudioRecording();            
+            countdownTimer.Start(); // start countdown
+        }
+
+        private async void ckbxListeningMode_Unchecked(object sender, RoutedEventArgs e)
+        {
+            countdownTimer.Stop();
+            StopAudioRecording();
+            string whisperType = cmbWhisperModel.Text;
+            var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", whisperType);
+            if (response != null)
+            {               
+                if (ckbxMute.IsChecked == true)
+                {
+                    try
+                    {
+                        await AssistantResponseWindow("Whisper Translate: ", response);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                    }
+                }
+
+                else
+                {
+                    try
+                    {
+                        string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                        speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                        Directory.CreateDirectory(speechDirectory);
+
+                        //string sAnswer = SendMsg(sQuestion) + "";
+                        await AssistantResponseWindow("Whisper Translate: ", response);
+                        await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.Text);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                    }
+                }
+            }
+
+            btnSend.IsEnabled = true;
+            btnClear.IsEnabled = true;
+        }
+
+        private void StartAudioRecording()
+        {
+            try
+            {
+                // Generate a unique file name for each recording session
+                string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);
+
+                // Ensure the directory exists
+                Directory.CreateDirectory(recordingsDirectory);
+
+                // Start recording to the specified file
+                audioRecorder.StartRecording(currentRecordingPath);
+            }
+
+            catch (Exception ex)
+            {
+                MessageBox.Show($"An error occurred while starting recording: {ex.Message}");
+            }
+        }
+
+        private void StopAudioRecording()
+        {
+            audioRecorder.StopRecording();
+        }
+
+        private void InitializeCountdownTimer()
+        {
+            countdownTimer = new DispatcherTimer();
+            countdownTimer.Interval = TimeSpan.FromSeconds(1);
+            countdownTimer.Tick += CountdownTimer_Tick;
+            ListeningModeProgressBar.Maximum = countdownValue;
+        }
+
+        private void CountdownTimer_Tick(object sender, EventArgs e)
+        {
+            countdownValue--;
+            ListeningModeProgressBar.Value = countdownValue;
+
+            if (countdownValue <= 0)
+            {
+                countdownTimer.Stop();
+                ckbxListeningMode.IsChecked = false; 
+            }
         }
 
         private void txtQuestion_TextChanged(object sender, TextChangedEventArgs e)
