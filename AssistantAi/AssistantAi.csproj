@@ -6,12 +6,12 @@
     <Nullable>enable</Nullable>
     <UseWPF>true</UseWPF>
     <StartupObject>AssistantAi.App</StartupObject>
-    <ApplicationIcon>Resources\RobotFace.ico</ApplicationIcon>
+    <ApplicationIcon>Resources\Images\RobotFace.ico</ApplicationIcon>
     <PlatformTarget>x64</PlatformTarget>
   </PropertyGroup>
 
   <ItemGroup>
-    <Content Include="Resources\RobotFace.ico" />
+    <Content Include="Resources\Images\RobotFace.ico" />
   </ItemGroup>
 
   <ItemGroup>

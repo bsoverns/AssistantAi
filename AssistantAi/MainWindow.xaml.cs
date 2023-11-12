@@ -79,6 +79,8 @@ namespace AssistantAi
             defaultChatGptModel = @"gpt-3.5-turbo",
             defaultWhisperModel = @"transcriptions",
             defaultAudioVoice = @"onyx",
+            recordingsDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Recordings"),
+            currentRecordingPath, 
             speechDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Speech"),
             speechRecordingPath;
 
@@ -94,6 +96,7 @@ namespace AssistantAi
 
         private async void OnSendButtonClick(object sender, RoutedEventArgs e)
         {
+            btnSend.IsEnabled = false;
             if (!CostCheck())
                 MessageBox.Show("Either the token or the cost threshold is too high for your default settings.\r\n\r\nEither adjust your token/cost threshold or rephrase your question.");
 
@@ -103,14 +106,31 @@ namespace AssistantAi
                 //await SendMessage();
 
                 //Speech return test
-                string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
-                speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                //string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                //speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
 
-                // Ensure the directory exists
-                Directory.CreateDirectory(speechDirectory);
-                WhisperTextToSpeechAsync(speechRecordingPath, txtQuestion.Text, @"onyx");
+                //Directory.CreateDirectory(speechDirectory);
+                //WhisperTextToSpeechAsync(speechRecordingPath, txtQuestion.Text, @"onyx");
+
+                //Whisper
+                string fileName = $"Record_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                Directory.CreateDirectory(recordingsDirectory);
+                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);               
+
+                //Transcriptions
+                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Recording.m4a");
+
+                //Translations
+                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "German.m4a");
+                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Telugu.m4a");
+                currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Polish.m4a");
+
+                //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"transcriptions");
+                var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"translations");
+                txtAssistantResponse.Text = response;                
             }
-            
+
+            btnSend.IsEnabled = true;
         }
 
         private async void OnClearButtonClick(object sender, RoutedEventArgs e)
@@ -281,6 +301,42 @@ namespace AssistantAi
                 DeleteFile(filePath); // Ensure DeleteFile is thread-safe or dispatch it to the UI thread if necessary
             };
         }
+
+        public async Task<string> WhisperMsgAsync(string audioFilePath, string modelName, string modelType)
+        {
+            string sUrl = "https://api.openai.com/v1/audio/" + modelType;
+
+            using (var httpClient = new HttpClient())
+            using (var formData = new MultipartFormDataContent())
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
+
+                // Load the file into a StreamContent
+                byte[] fileBytes = File.ReadAllBytes(audioFilePath);
+                var fileContent = new ByteArrayContent(fileBytes);
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
+                formData.Add(fileContent, "file", System.IO.Path.GetFileName(audioFilePath));
+
+                // Add model name part
+                var modelContent = new StringContent(modelName);
+                formData.Add(modelContent, "model");
+
+                try
+                {
+                    var response = await httpClient.PostAsync(sUrl, formData);
+                    response.EnsureSuccessStatusCode();
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    return responseContent;
+                }
+                catch (HttpRequestException ex)
+                {
+                    // Handle exception
+                    Console.WriteLine("An error occurred while sending the request: " + ex.Message);
+                    return null;
+                }
+            }
+        }
+
 
         private void DeleteFile(string filePath)
         {
