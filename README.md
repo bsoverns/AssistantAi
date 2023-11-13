@@ -15,4 +15,4 @@ Install Steps:
 
 If this helps you in any way please donate if possible.  I would like to create more programs like this and improve this one.
 
-Or you can download current version from Google Drive: ["https://drive.google.com/file/d/12jTsjLC3mL_jrOINwASqiu3qW-4mh-Ko/view?usp=drive_link"]
+Or you can download current version from Google Drive: https://drive.google.com/file/d/12jTsjLC3mL_jrOINwASqiu3qW-4mh-Ko/view?usp=drive_link
