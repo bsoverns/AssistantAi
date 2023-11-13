@@ -12,3 +12,5 @@ Install Steps:
   a. The key is stored locally in a file called "ApiKey.json".
   b. From that point forward when you start the program it will never ask for the key again.
   c. If you need to remove or update the key, you need to remove the "ApiKey.json" file.
+
+If this helps you in any way please donate if possible.  I would like to create more programs like this and improve this one.
