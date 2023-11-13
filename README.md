@@ -15,4 +15,4 @@ Install Steps:
 
 If this helps you in any way please donate if possible.  I would like to create more programs like this and improve this one.
 
-Or you can download current version: ["https://1drv.ms/u/s!At-N3uPsq90uhIFb_kOln6xALurpGw?e=kwLw1Q"]
+Or you can download current version from OneDrive: ["https://1drv.ms/u/s!At-N3uPsq90uhIFb_kOln6xALurpGw?e=kwLw1Q"]
