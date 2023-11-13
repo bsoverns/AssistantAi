@@ -15,4 +15,4 @@ Install Steps:
 
 If this helps you in any way please donate if possible.  I would like to create more programs like this and improve this one.
 
-Or you can download current version from Dropbox: https://www.dropbox.com/scl/fi/mty3f57xr0q856ar1q9e3/AssistantAi.zip?rlkey=jhiln1orhk5lo5zbxciedt9ex&dl=0
+Or you can download current version from Dropbox: https://www.dropbox.com/scl/fo/mg4q2xy45rqari203fj89/h?rlkey=jlfrv319oqodsr5nw7bwdv6nt&dl=0
