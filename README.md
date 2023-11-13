@@ -14,3 +14,5 @@ Install Steps:
   c. If you need to remove or update the key, you need to remove the "ApiKey.json" file.
 
 If this helps you in any way please donate if possible.  I would like to create more programs like this and improve this one.
+
+Download current version: ["https://1drv.ms/u/s!At-N3uPsq90uhIFb_kOln6xALurpGw?e=kwLw1Q"]
