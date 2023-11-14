@@ -92,7 +92,7 @@ namespace AssistantAi
             speechDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Speech"),
             speechRecordingPath;
 
-        List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k" };
+        List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" }; //These seem broken in the program, "gpt-4-32k", "gpt-4-32k-0613" };
         int tokenCount = 0;
         double estimatedCost = 0;        
 
@@ -196,7 +196,7 @@ namespace AssistantAi
                     //string sAnswer = SendMsg(sQuestion) + "";
                     string sAnswer = await SendMsgAsync(sQuestion) + "";
                     await AssistantResponseWindow("Chat GPT: ", sAnswer);
-                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudioVoice.Text);               
+                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudioVoice.SelectedItem.ToString());               
                 }
 
                 catch (Exception ex)
@@ -403,7 +403,7 @@ namespace AssistantAi
             cmbModel.Items.Add("gpt-3.5-turbo-16k"); //16,385 tokens	Up to Sep 2021
             cmbModel.Items.Add("gpt-3.5-turbo-1106");
             cmbModel.Items.Add("gpt-4"); //8,192 tokens	Up to Sep 2021
-            cmbModel.Items.Add("gpt-4-32k"); //32,768 tokens	Up to Sep 2021
+            //cmbModel.Items.Add("gpt-4-32k"); //32,768 tokens	Up to Sep 2021        
 
             // Add items to cmbWhisperModel
             cmbWhisperModel.Items.Add("transcriptions");
@@ -637,7 +637,7 @@ namespace AssistantAi
 
                         //string sAnswer = SendMsg(sQuestion) + "";
                         await AssistantResponseWindow("Whisper Translate: ", response);
-                        await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.Text);
+                        await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
                     }
 
                     catch (Exception ex)
@@ -703,7 +703,9 @@ namespace AssistantAi
 
         private void cmbWhisperModel_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            if (cmbWhisperModel.Text == "transcriptions")
+            string whisperType = cmbWhisperModel.SelectedItem.ToString();
+
+            if (whisperType == "transcriptions")
             {
                 ckbxMute.IsChecked = true;
                 ckbxMute.IsEnabled = false;
@@ -770,7 +772,7 @@ namespace AssistantAi
                 { "gpt-3.5-turbo", (0.0010, 0.0020) },
                 { "gpt-3.5-turbo-16k", (0.0010, 0.0020) }
             };
-
+            
             // Calculate the price based on the number of tokens and the specified model
             if (pricing.TryGetValue(modelName.ToLower(), out var prices))
             {
