@@ -80,7 +80,7 @@ namespace AssistantAi
     {
         public AudioRecorder audioRecorder = new AudioRecorder();
         public DispatcherTimer countdownTimer;
-        public int countdownValue = 10; 
+        public int countdownValue = 30; 
 
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
@@ -142,11 +142,12 @@ namespace AssistantAi
             }
 
             btnSend.IsEnabled = true;
+            txtQuestion.Focus();
         }
 
         private async void OnClearButtonClick(object sender, RoutedEventArgs e)
         {
-            txtAssistantResponse.Text = string.Empty;
+            txtAssistantResponse.Document.Blocks.Clear();
         }
 
         private async Task SendMessage()
@@ -159,12 +160,13 @@ namespace AssistantAi
                 return;
             }
 
-            if (txtAssistantResponse.Text != "")
+            if (txtAssistantResponse.Document.Blocks.Count > 0)
             {
-                txtAssistantResponse.AppendText("\r\n");
+                AppendTextToRichTextBox("\r\n");
             }
 
-            txtAssistantResponse.AppendText("Me: " + sQuestion);
+            //txtAssistantResponse.AppendText("Me: " + sQuestion);
+            await AssistantResponseWindow("Me: ", sQuestion);
             txtQuestion.Text = "";
 
             if (ckbxMute.IsChecked == true)
@@ -388,6 +390,8 @@ namespace AssistantAi
 
         private async Task SetDefaultsAsync()
         {
+            txtAssistantResponse.Document.Blocks.Clear();
+
             // Add default user
             txtUserId.Text = @"1";
 
@@ -425,14 +429,14 @@ namespace AssistantAi
             cmbAudioVoice.SelectedItem = defaultAudioVoice;            
 
             // Set colors and fonts for txtQuestion
-            txtQuestion.Background = new SolidColorBrush(Colors.Black);
-            txtQuestion.Foreground = new SolidColorBrush(Colors.White);
+            txtQuestion.Background = new SolidColorBrush(Colors.LightGray);
+            txtQuestion.Foreground = new SolidColorBrush(Colors.Black);
             txtQuestion.FontFamily = new System.Windows.Media.FontFamily("Courier New");
             txtQuestion.FontSize = 15; // This sets the font size to 15
 
             // Set colors and fonts for txtAssistantResponse
-            txtAssistantResponse.Background = new SolidColorBrush(Colors.Black);
-            txtAssistantResponse.Foreground = new SolidColorBrush(Colors.White);
+            txtAssistantResponse.Background = new SolidColorBrush(Colors.LightGray);
+            txtAssistantResponse.Foreground = new SolidColorBrush(Colors.Black);
             txtAssistantResponse.FontFamily = new System.Windows.Media.FontFamily("Courier New");
             txtAssistantResponse.FontSize = 15; // This sets the font size to 15
 
@@ -443,6 +447,7 @@ namespace AssistantAi
 
             await LoadApiKey();
             await CheckApiKey();
+            txtQuestion.Focus();
         }
 
         private async Task CheckApiKey()
@@ -472,22 +477,130 @@ namespace AssistantAi
         {
             try
             {
-                txtAssistantResponse.AppendText("\r\n" + typeResponse + response.Replace("\n", "\r\n").Trim() + "\r\n");
+                // Check if the response contains code marked by ```
+                int firstIndex = response.IndexOf("```");
+                int lastIndex = response.LastIndexOf("```");
+
+                //if (firstIndex != -1 && lastIndex != -1 && firstIndex != lastIndex)
+                //{
+                //    // Append text before the code block
+                //    string beforeCode = response.Substring(0, firstIndex);
+                //    AppendTextToRichTextBox(beforeCode);
+
+                //    // Extract the code block and highlight it
+                //    string code = response.Substring(firstIndex + 3, lastIndex - firstIndex - 3);
+                //    HighlightCode(code);
+
+                //    // Append text after the code block
+                //    string afterCode = response.Substring(lastIndex + 3);
+                //    AppendTextToRichTextBox(afterCode);
+                //}
+
+                //else
+                {
+                    // It's not code, append it as plain text
+                    AppendTextToRichTextBox(typeResponse + response.Trim());
+                }
+
+                // Scroll to end to make the new content visible
                 txtAssistantResponse.ScrollToEnd();
             }
-
             catch (Exception ex)
             {
-                txtAssistantResponse.AppendText("Error: " + ex.Message);
+                AppendTextToRichTextBox("Error: " + ex.Message);
                 txtAssistantResponse.ScrollToEnd();
             }
+        }
+
+        private void AppendTextToRichTextBox(string text)
+        {
+            Paragraph paragraph = new Paragraph(new Run(text));
+            txtAssistantResponse.Document.Blocks.Add(paragraph);
+        }
+
+        //Incomplete below
+        private void HighlightCode(string code)
+        {
+            // Define colors for syntax highlighting
+            SolidColorBrush keywordColor = System.Windows.Media.Brushes.Blue;
+            SolidColorBrush stringColor = System.Windows.Media.Brushes.Brown;
+            SolidColorBrush commentColor = System.Windows.Media.Brushes.Green;
+
+            // Define a list of C# keywords
+            var keywords = new HashSet<string> {
+                "abstract", "event", "new", "struct",
+                "as", "explicit", "null", "switch",
+                "base", "extern", "object", "this",
+                "bool", "false", "operator", "throw",
+                "break", "finally", "out", "true",
+                "byte", "fixed", "override", "try",
+                "case", "float", "params", "typeof",
+                "catch", "for", "private", "uint",
+                "char", "foreach", "protected", "ulong",
+                "checked", "goto", "public", "unchecked",
+                "class", "if", "readonly", "unsafe",
+                "const", "implicit", "ref", "ushort",
+                "continue", "in", "return", "using",
+                "decimal", "int", "sbyte", "virtual",
+                "default", "interface", "sealed", "volatile",
+                "delegate", "internal", "short", "void",
+                "do", "is", "sizeof", "while",
+                "double", "lock", "stackalloc",
+                "else", "long", "static",
+                "enum", "namespace", "string"
+    };
+
+            Paragraph paragraph = new Paragraph();
+            paragraph.Margin = new Thickness(0);  // Remove spacing between lines
+
+            // Split the code into lines for processing
+            string[] lines = code.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
+
+            foreach (var line in lines)
+            {
+                // Split the line into words to apply highlighting
+                string[] words = line.Split(new char[] { ' ', '(', ')', '[', ']', '{', '}', '.', ',', ':', ';', '+', '-', '*', '/', '!', '=', '<', '>', '&', '|', '^', '?', '%' }, StringSplitOptions.RemoveEmptyEntries);
+
+                foreach (var word in words)
+                {
+                    Run run = new Run(word + " ");
+
+                    // Check for comments (this will only work for single line comments)
+                    if (word.StartsWith("//") || word.StartsWith("/*") || word.StartsWith("*/"))
+                    {
+                        run.Foreground = commentColor;
+                    }
+                    // Check for strings (this is a simple check, doesn't handle verbatim strings or escapes)
+                    else if (word.StartsWith("\"") && word.EndsWith("\""))
+                    {
+                        run.Foreground = stringColor;
+                    }
+                    // Check for keywords
+                    else if (keywords.Contains(word))
+                    {
+                        run.Foreground = keywordColor;
+                    }
+
+                    paragraph.Inlines.Add(run);
+                }
+
+                // Add a new line at the end of each line
+                paragraph.Inlines.Add(new Run(Environment.NewLine));
+            }
+
+            // Add the Paragraph to the existing Blocks in the RichTextBox
+            txtAssistantResponse.Document.Blocks.Add(paragraph);
         }
 
         private async void ckbxListeningMode_Checked(object sender, RoutedEventArgs e)
         {
             btnSend.IsEnabled = false;
             btnClear.IsEnabled = false;
-            countdownValue = 10; // reset countdown
+            cmbWhisperModel.IsEnabled = false; 
+            cmbAudioVoice.IsEnabled = false;
+            cmbModel.IsEnabled = false;
+            ckbxMute.IsEnabled = false;
+            countdownValue = 30; // reset countdown
             ListeningModeProgressBar.Value = countdownValue; // reset progress bar
             StartAudioRecording();            
             countdownTimer.Start(); // start countdown
@@ -534,6 +647,10 @@ namespace AssistantAi
                 }
             }
 
+            cmbWhisperModel.IsEnabled = true;
+            cmbAudioVoice.IsEnabled = true;
+            cmbModel.IsEnabled = true;
+            ckbxMute.IsEnabled = true;
             btnSend.IsEnabled = true;
             btnClear.IsEnabled = true;
         }
@@ -584,6 +701,20 @@ namespace AssistantAi
             }
         }
 
+        private void cmbWhisperModel_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (cmbWhisperModel.Text == "transcriptions")
+            {
+                ckbxMute.IsChecked = true;
+                ckbxMute.IsEnabled = false;
+            }
+
+            else
+            {
+                ckbxMute.IsEnabled = true;
+            }
+        }
+
         private void txtQuestion_TextChanged(object sender, TextChangedEventArgs e)
         {
             TokenCheck();
@@ -611,7 +742,7 @@ namespace AssistantAi
             estimatedCost = CalculatePrice(tokenCount, modelName);
 
             lblEstimatedTokens.Content = @"Estimated Tokens = " + tokenCount.ToString();
-            lblEstimatedCost.Content = $"Estimated Cost: ${estimatedCost:F2}";
+            lblEstimatedCost.Content = $"Estimated Cost = ${estimatedCost:F2}";
         }
 
         private static int CountTokens(string input)

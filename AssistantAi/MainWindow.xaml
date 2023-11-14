@@ -39,6 +39,7 @@
                         <RowDefinition Height="Auto"/>                        
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- First set of controls -->
@@ -47,23 +48,21 @@
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
-                            <ColumnDefinition Width="100" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="100" />
                             <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
 
                         <Button Name="btnSend" Content="Send" Grid.Column="0" Click="OnSendButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
-                        <Label Content="User ID" Grid.Column="1" Margin="8,8,0,0" HorizontalAlignment="Right"/>
-                        <TextBox Name="txtUserId" Grid.Column="2" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>                        
-                        <Label Content="Max Tokens" Grid.Column="3" Margin="8,8,0,0" HorizontalAlignment="Right"/>
-                        <TextBox Name="txtMaxTokens" Grid.Column="4" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
-                        <CheckBox Name="ckbxListeningMode" Content="Translate/Transcribe Mode" Grid.Column="5" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxListeningMode_Checked" Unchecked="ckbxListeningMode_Unchecked"/>                        
-                        <Label Content="ChatGpt Model" Grid.Column="7" Margin="8,8,0,0" HorizontalAlignment="Right"/>
-                        <ComboBox Name="cmbModel" Grid.Column="8" Grid.ColumnSpan="2" Margin="8,8,0,0" SelectionChanged="cmbModel_SelectionChanged"/>
+                        <Label Content="ChatGpt Model" Grid.Column="1" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <ComboBox Name="cmbModel" Grid.Column="2" Grid.ColumnSpan="2" Margin="8,8,0,0" SelectionChanged="cmbModel_SelectionChanged"/>
+                        <Label Content="Voice Model" Grid.Column="5" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <ComboBox Name="cmbAudioVoice" Grid.Column="6" Grid.ColumnSpan="2"  Margin="8,8,0,0" />
+                        <CheckBox Name="ckbxMute" Content="Mute Voice" Grid.Column="8" Margin="8,8,0,0" VerticalAlignment="Center"/>
                     </Grid>
 
                     <!-- Second set of controls -->
@@ -72,23 +71,22 @@
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
-                            <ColumnDefinition Width="100" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="100" />
                             <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
 
                         <Button Name="btnClear" Content="Clear" Grid.Column="0" Click="OnClearButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
-                        <Label Content="Temperature" Grid.Column="1" Margin="8,8,0,0" HorizontalAlignment="Right"/>
-                        <TextBox Name="txtTemperature" Grid.Column="2" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
-                        <Label Content="Max Dollars" Grid.Column="3" Margin="8,8,0,0" HorizontalAlignment="Right"/>
-                        <TextBox Name="txtMaxDollars" Grid.Column="4" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
-                        <CheckBox Name="ckbxMute" Content="Mute Voice" Grid.Column="5" Margin="8,8,0,0" VerticalAlignment="Center"/>
-                        <Label Content="Voice Model" Grid.Column="7" Margin="8,8,0,0" HorizontalAlignment="Right"/>
-                        <ComboBox Name="cmbAudioVoice" Grid.Column="8" Grid.ColumnSpan="2"  Margin="8,8,0,0" />
+                        <Label Name="lblEstimatedTokens" Content="Estimated Tokens = 0" Grid.Column="1" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
+                        <Label Name="lblEstimatedCost" Content="Estimated Cost = $0.00" Grid.Column="3" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>                        
+                        <Label Content="Whisper Model" Grid.Column="5" Margin="8,8,0,0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
+                        <ComboBox Name="cmbWhisperModel" Grid.Column="6" Grid.ColumnSpan="2"  Margin="8,8,0,0" SelectionChanged="cmbWhisperModel_SelectionChanged"/>
+                        <CheckBox Name="ckbxListeningMode" Content="Translate/Transcribe Mode" Grid.Column="8" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxListeningMode_Checked" Unchecked="ckbxListeningMode_Unchecked"/>
+
                     </Grid>
 
                     <!-- Third set of controls -->
@@ -97,25 +95,46 @@
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
-                            <ColumnDefinition Width="100" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="100" />
                             <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
 
-                        <Label Name="lblEstimatedTokens" Content="Estimated Tokens = 0" Grid.Column="0" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                        <Label Name="lblEstimatedCost" Content="Estimated Cost = $0.00" Grid.Column="2" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                        <Label Content="Record Max" Grid.Column="4" Margin="8,8,0,0" HorizontalAlignment="Right" />
-                        <StatusBar Grid.Column="5" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
+                        <Label Content="User ID" Grid.Column="0" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <TextBox Name="txtUserId" Grid.Column="1" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
+                        <Label Content="Max Tokens" Grid.Column="2" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <TextBox Name="txtMaxTokens" Grid.Column="3" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
+                        <Label Content="Record Max 30 Seconds" Grid.Column="4" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Right" />
+                        <StatusBar Grid.Column="6" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
                             <StatusBarItem>
                                 <ProgressBar Name="ListeningModeProgressBar" Width="175" Height="20" Minimum="0" Maximum="100"/>
                             </StatusBarItem>
                         </StatusBar>
-                        <Label Content="Whisper Model" Grid.Column="7" Margin="8,8,0,0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
-                        <ComboBox Name="cmbWhisperModel" Grid.Column="8" Grid.ColumnSpan="2"  Margin="8,8,0,0"/>
+                    </Grid>
+
+                    <!-- Fourth set of controls -->
+                    <Grid Grid.Row="3">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+
+                        <Label Content="Temperature" Grid.Column="0" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <TextBox Name="txtTemperature" Grid.Column="1" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
+                        <Label Content="Max Dollars" Grid.Column="2" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <TextBox Name="txtMaxDollars" Grid.Column="3" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>                       
                     </Grid>
                 </Grid>
             </GroupBox>
@@ -131,7 +150,7 @@
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions> 
                    
-                    <TextBox Name="txtAssistantResponse"
+                    <!--<TextBox Name="txtAssistantResponse"
                              Grid.Column="0"
                              Grid.ColumnSpan="3"
                              Height="Auto"                     
@@ -140,6 +159,19 @@
                              VerticalAlignment="Stretch"
                              Margin="0,0,0,0"
                              TextWrapping="Wrap"
+                             AcceptsReturn="True"
+                             ScrollViewer.VerticalScrollBarVisibility="Auto"
+                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
+                             IsReadOnly="True"/>-->
+
+                    <RichTextBox Name="txtAssistantResponse"
+                             Grid.Column="0"
+                             Grid.ColumnSpan="3"
+                             Height="Auto"                     
+                             MinHeight="260"
+                             HorizontalAlignment="Stretch"                             
+                             VerticalAlignment="Stretch"
+                             Margin="0,0,0,0"
                              AcceptsReturn="True"
                              ScrollViewer.VerticalScrollBarVisibility="Auto"
                              ScrollViewer.HorizontalScrollBarVisibility="Auto"
