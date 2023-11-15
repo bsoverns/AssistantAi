@@ -99,3 +99,28 @@ jobs:
       with:
         name: Build Artifacts
         path: AssistantAi\bin\${{ matrix.configuration }}
+
+            # Add new steps here to update the README.md
+    - name: Fetch Artifact Upload URL
+      id: fetch_artifact_url
+      run: |
+        # PowerShell script to fetch the latest artifact upload URL
+        # You will need to write a script here to get the URL
+
+    - name: Update README
+      run: |
+        # PowerShell script to update README.md
+        # Replace '[AssistantArtifact]' with the actual placeholder text in your README
+        $artifactUrl = "${{ steps.fetch_artifact_url.outputs.artifact_url }}"
+        $readmeContent = Get-Content README.md
+        $updatedContent = $readmeContent -replace 'your-placeholder-in-readme', $artifactUrl
+        Set-Content README.md $updatedContent
+
+    - name: Commit and Push changes
+      run: |
+        git config --global user.name 'bsoverns'
+        git config --global user.email 'bsoverns@gmail.com'
+        git add README.md
+        git commit -m "Update README with latest artifact link"
+        git push
+
