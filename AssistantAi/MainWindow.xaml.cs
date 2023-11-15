@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -79,6 +80,7 @@ namespace AssistantAi
     public partial class MainWindow : Window
     {
         public AudioRecorder audioRecorder = new AudioRecorder();
+        private MediaPlayer mediaPlayer;
         public DispatcherTimer countdownTimer;
         public int countdownValue = 30; 
 
@@ -90,7 +92,8 @@ namespace AssistantAi
             recordingsDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Recordings"),
             currentRecordingPath, 
             speechDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Speech"),
-            speechRecordingPath;
+            speechRecordingPath,
+            currentlyPlayingFilePath;
 
         List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" }; //These seem broken in the program, "gpt-4-32k", "gpt-4-32k-0613" };
         int tokenCount = 0;
@@ -99,6 +102,9 @@ namespace AssistantAi
         public MainWindow()
         {
             InitializeComponent();
+            mediaPlayer = new MediaPlayer();
+            mediaPlayer.MediaEnded += MediaPlayer_MediaEnded;
+            mediaPlayer.MediaFailed += MediaPlayer_MediaFailed;
             InitializeCountdownTimer();
             SetDefaultsAsync();            
         }       
@@ -107,7 +113,7 @@ namespace AssistantAi
         {
             btnSend.IsEnabled = false;
             if (!CostCheck())
-                MessageBox.Show("Either the token or the cost threshold is too high for your default settings.\r\n\r\nEither adjust your token/cost threshold or rephrase your question.");
+                MessageBox.Show("Either the token or the cost threshold is too high for your default settings.\r\n\r\nEither adjust your token/cost threshold, rephrase your question, or change your model.");
 
             else
             {
@@ -189,7 +195,7 @@ namespace AssistantAi
             {
                 try
                 {
-                    string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                    string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.mp3";
                     speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
                     Directory.CreateDirectory(speechDirectory);
 
@@ -312,7 +318,7 @@ namespace AssistantAi
                     }
 
                     // Optionally play the MP3 file after saving
-                    PlayMp3File(outputFilePath);
+                    await PlayMp3File(outputFilePath);
                 }
 
                 catch (HttpRequestException e)
@@ -320,25 +326,34 @@ namespace AssistantAi
                     // Handle exception.
                     Console.WriteLine($"Request exception: {e.Message}");
                 }
-
-
             }
         }
 
-        private void PlayMp3File(string filePath)
+        private async Task PlayMp3File(string filePath)
         {
-            var mediaPlayer = new MediaPlayer();
-
-            mediaPlayer.Open(new Uri(filePath));
-
-            mediaPlayer.Play();
-
-            // Event handler for the MediaEnded event to dispose of the MediaPlayer once playback is finished
-            mediaPlayer.MediaEnded += (sender, e) =>
+            try
             {
-                mediaPlayer.Close();
-                DeleteFile(filePath); // Ensure DeleteFile is thread-safe or dispatch it to the UI thread if necessary
-            };
+                mediaPlayer.Open(new Uri(filePath));
+                mediaPlayer.Play();
+                currentlyPlayingFilePath = filePath; // Track the currently playing file
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Playback Exception: {ex.Message}");
+                await DeleteFileAsync(filePath);
+            }
+        }
+
+        private async void MediaPlayer_MediaEnded(object sender, EventArgs e)
+        {
+            // Handle media ended event
+            await Task.Delay(500); // Short delay to ensure media is fully released
+            await DeleteFileAsync(currentlyPlayingFilePath); // Assuming you have a way to track this
+        }
+
+        private void MediaPlayer_MediaFailed(object sender, EventArgs e)
+        {
+            MessageBox.Show(@"Error playback on file: " + currentlyPlayingFilePath.ToString());
         }
 
         public async Task<string> WhisperMsgAsync(string audioFilePath, string modelName, string modelType)
@@ -350,13 +365,11 @@ namespace AssistantAi
             {
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
 
-                // Load the file into a StreamContent
                 byte[] fileBytes = File.ReadAllBytes(audioFilePath);
                 var fileContent = new ByteArrayContent(fileBytes);
                 fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
                 formData.Add(fileContent, "file", System.IO.Path.GetFileName(audioFilePath));
 
-                // Add model name part
                 var modelContent = new StringContent(modelName);
                 formData.Add(modelContent, "model");
 
@@ -367,8 +380,8 @@ namespace AssistantAi
                     var responseContent = await response.Content.ReadAsStringAsync();
                     var parsedResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
                     return parsedResponse.ContainsKey("text") ? parsedResponse["text"] : string.Empty;
-                    //return responseContent;
                 }
+
                 catch (HttpRequestException ex)
                 {
                     // Handle exception
@@ -378,14 +391,25 @@ namespace AssistantAi
 
                 finally
                 {
-                    DeleteFile(audioFilePath);
+                    await DeleteFileAsync(audioFilePath);
                 }
             }
         }
 
-        private void DeleteFile(string filePath)
+        private async Task DeleteFileAsync(string filePath)
         {
-            File.Delete(filePath);
+            try
+            {
+                if (File.Exists(filePath))
+                {
+                    File.Delete(filePath);
+                }
+            }
+            catch (Exception ex)
+            {
+                // Handle exceptions related to file deletion
+                MessageBox.Show($"Delete File Exception: {ex.Message}");
+            }
         }
 
         private async Task SetDefaultsAsync()
@@ -421,7 +445,7 @@ namespace AssistantAi
             txtMaxDollars.Text = "0.50";
 
             // Set mute checkbox
-            ckbxMute.IsChecked = true; 
+            ckbxMute.IsChecked = true;
 
             // Select default items by value
             cmbModel.SelectedItem = defaultChatGptModel;
@@ -481,28 +505,26 @@ namespace AssistantAi
                 int firstIndex = response.IndexOf("```");
                 int lastIndex = response.LastIndexOf("```");
 
-                //if (firstIndex != -1 && lastIndex != -1 && firstIndex != lastIndex)
-                //{
-                //    // Append text before the code block
-                //    string beforeCode = response.Substring(0, firstIndex);
-                //    AppendTextToRichTextBox(beforeCode);
+                if (firstIndex != -1 && lastIndex != -1 && firstIndex != lastIndex)
+                {
+                    // Append text before the code block as plain text
+                    string beforeCode = response.Substring(0, firstIndex);
+                    AppendTextToRichTextBox(beforeCode);
 
-                //    // Extract the code block and highlight it
-                //    string code = response.Substring(firstIndex + 3, lastIndex - firstIndex - 3);
-                //    HighlightCode(code);
+                    // Extract the code block and apply syntax highlighting
+                    string code = response.Substring(firstIndex + 3, lastIndex - firstIndex - 3);
+                    AppendTextToRichTextBox(code, isCodeBlock: true);
 
-                //    // Append text after the code block
-                //    string afterCode = response.Substring(lastIndex + 3);
-                //    AppendTextToRichTextBox(afterCode);
-                //}
-
-                //else
+                    // Append text after the code block as plain text
+                    string afterCode = response.Substring(lastIndex + 3);
+                    AppendTextToRichTextBox(afterCode);
+                }
+                else
                 {
                     // It's not code, append it as plain text
-                    AppendTextToRichTextBox(typeResponse + response.Trim());
+                    AppendTextToRichTextBox(typeResponse + " " + response);
                 }
 
-                // Scroll to end to make the new content visible
                 txtAssistantResponse.ScrollToEnd();
             }
             catch (Exception ex)
@@ -512,84 +534,89 @@ namespace AssistantAi
             }
         }
 
-        private void AppendTextToRichTextBox(string text)
+        private void AppendTextToRichTextBox(string text, bool isCodeBlock = false)
         {
-            Paragraph paragraph = new Paragraph(new Run(text));
+            Paragraph paragraph = new Paragraph();
+            if (isCodeBlock)
+            {
+                paragraph.FontFamily = new System.Windows.Media.FontFamily("Consolas");
+                paragraph.Background = System.Windows.Media.Brushes.LightGray;
+                paragraph.Padding = new Thickness(5);
+                HighlightCode(paragraph, text);
+            }
+            else
+            {
+                paragraph.Inlines.Add(new Run(text));
+            }
+
             txtAssistantResponse.Document.Blocks.Add(paragraph);
         }
 
-        //Incomplete below
-        private void HighlightCode(string code)
+        private void HighlightCode(Paragraph paragraph, string code)
         {
             // Define colors for syntax highlighting
             SolidColorBrush keywordColor = System.Windows.Media.Brushes.Blue;
             SolidColorBrush stringColor = System.Windows.Media.Brushes.Brown;
             SolidColorBrush commentColor = System.Windows.Media.Brushes.Green;
+            SolidColorBrush normalTextColor = System.Windows.Media.Brushes.Black;
 
             // Define a list of C# keywords
             var keywords = new HashSet<string> {
-                "abstract", "event", "new", "struct",
-                "as", "explicit", "null", "switch",
-                "base", "extern", "object", "this",
-                "bool", "false", "operator", "throw",
-                "break", "finally", "out", "true",
-                "byte", "fixed", "override", "try",
-                "case", "float", "params", "typeof",
-                "catch", "for", "private", "uint",
-                "char", "foreach", "protected", "ulong",
-                "checked", "goto", "public", "unchecked",
-                "class", "if", "readonly", "unsafe",
-                "const", "implicit", "ref", "ushort",
-                "continue", "in", "return", "using",
-                "decimal", "int", "sbyte", "virtual",
-                "default", "interface", "sealed", "volatile",
-                "delegate", "internal", "short", "void",
-                "do", "is", "sizeof", "while",
-                "double", "lock", "stackalloc",
-                "else", "long", "static",
-                "enum", "namespace", "string"
-    };
+                "abstract", "as", "base", "bool",
+                "break", "byte", "case", "catch",
+                "char", "checked", "class", "const",
+                "continue", "decimal", "default", "delegate",
+                "do", "double", "else", "enum",
+                "event", "explicit", "extern", "false",
+                "finally", "fixed", "float", "for",
+                "foreach", "goto", "if", "implicit",
+                "in", "int", "interface", "internal",
+                "is", "lock", "long", "namespace",
+                "new", "null", "object", "operator",
+                "out", "override", "params", "private",
+                "protected", "public", "readonly", "ref",
+                "return", "sbyte", "sealed", "short",
+                "sizeof", "stackalloc", "static", "string",
+                "struct", "switch", "this", "throw",
+                "true", "try", "typeof", "uint",
+                "ulong", "unchecked", "unsafe", "ushort",
+                "using", "virtual", "void", "volatile",
+                "while"
+            };
 
-            Paragraph paragraph = new Paragraph();
-            paragraph.Margin = new Thickness(0);  // Remove spacing between lines
-
-            // Split the code into lines for processing
             string[] lines = code.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
 
             foreach (var line in lines)
             {
-                // Split the line into words to apply highlighting
-                string[] words = line.Split(new char[] { ' ', '(', ')', '[', ']', '{', '}', '.', ',', ':', ';', '+', '-', '*', '/', '!', '=', '<', '>', '&', '|', '^', '?', '%' }, StringSplitOptions.RemoveEmptyEntries);
+                Span span = new Span();
 
-                foreach (var word in words)
+                string[] tokens = line.Split(' ');
+
+                foreach (var token in tokens)
                 {
-                    Run run = new Run(word + " ");
+                    Run run = new Run(token + " ") { Foreground = normalTextColor };
 
-                    // Check for comments (this will only work for single line comments)
-                    if (word.StartsWith("//") || word.StartsWith("/*") || word.StartsWith("*/"))
-                    {
-                        run.Foreground = commentColor;
-                    }
-                    // Check for strings (this is a simple check, doesn't handle verbatim strings or escapes)
-                    else if (word.StartsWith("\"") && word.EndsWith("\""))
-                    {
-                        run.Foreground = stringColor;
-                    }
-                    // Check for keywords
-                    else if (keywords.Contains(word))
+                    if (keywords.Contains(token))
                     {
                         run.Foreground = keywordColor;
                     }
-
-                    paragraph.Inlines.Add(run);
+                    
+                    else if (token.StartsWith("//"))
+                    {
+                        run.Foreground = commentColor;
+                    }
+                    
+                    else if (token.StartsWith("\"") && token.EndsWith("\""))
+                    {
+                        run.Foreground = stringColor;
+                    }
+                    
+                    span.Inlines.Add(run);
                 }
 
-                // Add a new line at the end of each line
-                paragraph.Inlines.Add(new Run(Environment.NewLine));
+                paragraph.Inlines.Add(span);
+                paragraph.Inlines.Add(new LineBreak());
             }
-
-            // Add the Paragraph to the existing Blocks in the RichTextBox
-            txtAssistantResponse.Document.Blocks.Add(paragraph);
         }
 
         private async void ckbxListeningMode_Checked(object sender, RoutedEventArgs e)
@@ -618,7 +645,12 @@ namespace AssistantAi
                 {
                     try
                     {
-                        await AssistantResponseWindow("Whisper Translate: ", response);
+                        CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+                        TextInfo textInfo = cultureInfo.TextInfo;
+                        string whisperTypeString = whisperType.ToString(); // Assume whisperType is an enum or similar
+                        string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
+
+                        await AssistantResponseWindow("Whisper " + properCase + ": ", response);
                     }
 
                     catch (Exception ex)
@@ -660,7 +692,7 @@ namespace AssistantAi
             try
             {
                 // Generate a unique file name for each recording session
-                string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.mp3";
                 currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);
 
                 // Ensure the directory exists
@@ -708,7 +740,6 @@ namespace AssistantAi
             if (whisperType == "transcriptions")
             {
                 ckbxMute.IsChecked = true;
-                ckbxMute.IsEnabled = false;
             }
 
             else
