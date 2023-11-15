@@ -421,7 +421,8 @@ namespace AssistantAi
             txtMaxDollars.Text = "0.50";
 
             // Set mute checkbox
-            ckbxMute.IsChecked = true; 
+            ckbxMute.IsChecked = true;
+            ckbxMute.IsEnabled = false;
 
             // Select default items by value
             cmbModel.SelectedItem = defaultChatGptModel;
@@ -481,28 +482,26 @@ namespace AssistantAi
                 int firstIndex = response.IndexOf("```");
                 int lastIndex = response.LastIndexOf("```");
 
-                //if (firstIndex != -1 && lastIndex != -1 && firstIndex != lastIndex)
-                //{
-                //    // Append text before the code block
-                //    string beforeCode = response.Substring(0, firstIndex);
-                //    AppendTextToRichTextBox(beforeCode);
+                if (firstIndex != -1 && lastIndex != -1 && firstIndex != lastIndex)
+                {
+                    // Append text before the code block as plain text
+                    string beforeCode = response.Substring(0, firstIndex);
+                    AppendTextToRichTextBox(beforeCode);
 
-                //    // Extract the code block and highlight it
-                //    string code = response.Substring(firstIndex + 3, lastIndex - firstIndex - 3);
-                //    HighlightCode(code);
+                    // Extract the code block and apply syntax highlighting
+                    string code = response.Substring(firstIndex + 3, lastIndex - firstIndex - 3);
+                    AppendTextToRichTextBox(code, isCodeBlock: true);
 
-                //    // Append text after the code block
-                //    string afterCode = response.Substring(lastIndex + 3);
-                //    AppendTextToRichTextBox(afterCode);
-                //}
-
-                //else
+                    // Append text after the code block as plain text
+                    string afterCode = response.Substring(lastIndex + 3);
+                    AppendTextToRichTextBox(afterCode);
+                }
+                else
                 {
                     // It's not code, append it as plain text
-                    AppendTextToRichTextBox(typeResponse + response.Trim());
+                    AppendTextToRichTextBox(typeResponse + " " + response);
                 }
 
-                // Scroll to end to make the new content visible
                 txtAssistantResponse.ScrollToEnd();
             }
             catch (Exception ex)
@@ -512,84 +511,89 @@ namespace AssistantAi
             }
         }
 
-        private void AppendTextToRichTextBox(string text)
+        private void AppendTextToRichTextBox(string text, bool isCodeBlock = false)
         {
-            Paragraph paragraph = new Paragraph(new Run(text));
+            Paragraph paragraph = new Paragraph();
+            if (isCodeBlock)
+            {
+                paragraph.FontFamily = new System.Windows.Media.FontFamily("Consolas");
+                paragraph.Background = System.Windows.Media.Brushes.LightGray;
+                paragraph.Padding = new Thickness(5);
+                HighlightCode(paragraph, text);
+            }
+            else
+            {
+                paragraph.Inlines.Add(new Run(text));
+            }
+
             txtAssistantResponse.Document.Blocks.Add(paragraph);
         }
 
-        //Incomplete below
-        private void HighlightCode(string code)
+        private void HighlightCode(Paragraph paragraph, string code)
         {
             // Define colors for syntax highlighting
             SolidColorBrush keywordColor = System.Windows.Media.Brushes.Blue;
             SolidColorBrush stringColor = System.Windows.Media.Brushes.Brown;
             SolidColorBrush commentColor = System.Windows.Media.Brushes.Green;
+            SolidColorBrush normalTextColor = System.Windows.Media.Brushes.Black;
 
             // Define a list of C# keywords
             var keywords = new HashSet<string> {
-                "abstract", "event", "new", "struct",
-                "as", "explicit", "null", "switch",
-                "base", "extern", "object", "this",
-                "bool", "false", "operator", "throw",
-                "break", "finally", "out", "true",
-                "byte", "fixed", "override", "try",
-                "case", "float", "params", "typeof",
-                "catch", "for", "private", "uint",
-                "char", "foreach", "protected", "ulong",
-                "checked", "goto", "public", "unchecked",
-                "class", "if", "readonly", "unsafe",
-                "const", "implicit", "ref", "ushort",
-                "continue", "in", "return", "using",
-                "decimal", "int", "sbyte", "virtual",
-                "default", "interface", "sealed", "volatile",
-                "delegate", "internal", "short", "void",
-                "do", "is", "sizeof", "while",
-                "double", "lock", "stackalloc",
-                "else", "long", "static",
-                "enum", "namespace", "string"
-    };
+                "abstract", "as", "base", "bool",
+                "break", "byte", "case", "catch",
+                "char", "checked", "class", "const",
+                "continue", "decimal", "default", "delegate",
+                "do", "double", "else", "enum",
+                "event", "explicit", "extern", "false",
+                "finally", "fixed", "float", "for",
+                "foreach", "goto", "if", "implicit",
+                "in", "int", "interface", "internal",
+                "is", "lock", "long", "namespace",
+                "new", "null", "object", "operator",
+                "out", "override", "params", "private",
+                "protected", "public", "readonly", "ref",
+                "return", "sbyte", "sealed", "short",
+                "sizeof", "stackalloc", "static", "string",
+                "struct", "switch", "this", "throw",
+                "true", "try", "typeof", "uint",
+                "ulong", "unchecked", "unsafe", "ushort",
+                "using", "virtual", "void", "volatile",
+                "while"
+            };
 
-            Paragraph paragraph = new Paragraph();
-            paragraph.Margin = new Thickness(0);  // Remove spacing between lines
-
-            // Split the code into lines for processing
             string[] lines = code.Split(new[] { Environment.NewLine }, StringSplitOptions.None);
 
             foreach (var line in lines)
             {
-                // Split the line into words to apply highlighting
-                string[] words = line.Split(new char[] { ' ', '(', ')', '[', ']', '{', '}', '.', ',', ':', ';', '+', '-', '*', '/', '!', '=', '<', '>', '&', '|', '^', '?', '%' }, StringSplitOptions.RemoveEmptyEntries);
+                Span span = new Span();
 
-                foreach (var word in words)
+                string[] tokens = line.Split(' ');
+
+                foreach (var token in tokens)
                 {
-                    Run run = new Run(word + " ");
+                    Run run = new Run(token + " ") { Foreground = normalTextColor };
 
-                    // Check for comments (this will only work for single line comments)
-                    if (word.StartsWith("//") || word.StartsWith("/*") || word.StartsWith("*/"))
-                    {
-                        run.Foreground = commentColor;
-                    }
-                    // Check for strings (this is a simple check, doesn't handle verbatim strings or escapes)
-                    else if (word.StartsWith("\"") && word.EndsWith("\""))
-                    {
-                        run.Foreground = stringColor;
-                    }
-                    // Check for keywords
-                    else if (keywords.Contains(word))
+                    if (keywords.Contains(token))
                     {
                         run.Foreground = keywordColor;
                     }
-
-                    paragraph.Inlines.Add(run);
+                    
+                    else if (token.StartsWith("//"))
+                    {
+                        run.Foreground = commentColor;
+                    }
+                    
+                    else if (token.StartsWith("\"") && token.EndsWith("\""))
+                    {
+                        run.Foreground = stringColor;
+                    }
+                    
+                    span.Inlines.Add(run);
                 }
 
-                // Add a new line at the end of each line
-                paragraph.Inlines.Add(new Run(Environment.NewLine));
+                paragraph.Inlines.Add(span);
+                paragraph.Inlines.Add(new LineBreak());
             }
-
-            // Add the Paragraph to the existing Blocks in the RichTextBox
-            txtAssistantResponse.Document.Blocks.Add(paragraph);
         }
 
         private async void ckbxListeningMode_Checked(object sender, RoutedEventArgs e)
