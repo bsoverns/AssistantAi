@@ -7,12 +7,12 @@
     <Border Padding="10">
         <Grid>
             <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
                 <!-- For User Input GroupBox -->
                 <RowDefinition Height="Auto"/>
                 <!-- For Controls GroupBox -->
-                <RowDefinition Height="*"/>
+                <RowDefinition Height="Auto"/>
                 <!-- For AI Output GroupBox to expand -->
+                <RowDefinition Height="*"/>                
             </Grid.RowDefinitions>
 
             <GroupBox Header="User - Input" Grid.Row="0" Visibility="Visible">
@@ -148,26 +148,11 @@
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
                     </Grid.RowDefinitions> 
-                   
-                    <!--<TextBox Name="txtAssistantResponse"
-                             Grid.Column="0"
-                             Grid.ColumnSpan="3"
-                             Height="Auto"                     
-                             MinHeight="260"
-                             HorizontalAlignment="Stretch"                             
-                             VerticalAlignment="Stretch"
-                             Margin="0,0,0,0"
-                             TextWrapping="Wrap"
-                             AcceptsReturn="True"
-                             ScrollViewer.VerticalScrollBarVisibility="Auto"
-                             ScrollViewer.HorizontalScrollBarVisibility="Auto"
-                             IsReadOnly="True"/>-->
 
                     <RichTextBox Name="txtAssistantResponse"
                              Grid.Column="0"
                              Grid.ColumnSpan="3"
-                             Height="Auto"                     
-                             MinHeight="260"
+                             Height="Auto"       
                              HorizontalAlignment="Stretch"                             
                              VerticalAlignment="Stretch"
                              Margin="0,0,0,0"
