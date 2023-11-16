@@ -111,7 +111,9 @@ namespace AssistantAi
 
         private async void OnSendButtonClick(object sender, RoutedEventArgs e)
         {
+            AssistantControls.IsEnabled = false;
             btnSend.IsEnabled = false;
+            btnClear.IsEnabled = false;
             if (!CostCheck())
                 MessageBox.Show("Either the token or the cost threshold is too high for your default settings.\r\n\r\nEither adjust your token/cost threshold, rephrase your question, or change your model.");
 
@@ -147,7 +149,9 @@ namespace AssistantAi
                 */
             }
 
+            AssistantControls.IsEnabled = true;
             btnSend.IsEnabled = true;
+            btnClear.IsEnabled = true;
             txtQuestion.Focus();
         }
 
