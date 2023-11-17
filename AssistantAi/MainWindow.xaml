@@ -133,7 +133,8 @@
                         <Label Content="Temperature" Grid.Column="0" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <TextBox Name="txtTemperature" Grid.Column="1" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
                         <Label Content="Max Dollars" Grid.Column="2" Margin="8,8,0,0" HorizontalAlignment="Right"/>
-                        <TextBox Name="txtMaxDollars" Grid.Column="3" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>                       
+                        <TextBox Name="txtMaxDollars" Grid.Column="3" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
+                        <Button Name="btnGetImage" Content="Get Image" Grid.Column="6" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left" Click="btnGetImage_Click"/>
                     </Grid>
                 </Grid>
             </GroupBox>
