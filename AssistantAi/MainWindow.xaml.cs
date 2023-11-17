@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -25,9 +26,9 @@ using System.Windows.Media.Media3D;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using YourNamespace;
-using System.Drawing;
 using System.Configuration;
 using System.Windows.Threading;
+using System.Drawing.Imaging;
 
 namespace AssistantAi
 {
@@ -88,12 +89,16 @@ namespace AssistantAi
             openAIApiKey = @"",
             defaultChatGptModel = @"gpt-3.5-turbo",
             defaultWhisperModel = @"transcriptions",
-            defaultAudioVoice = @"onyx",
+            defaultAudioVoice = @"onyx", 
+            defaultImageModel = @"gpt-4-vision-preview",
             recordingsDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Recordings"),
             currentRecordingPath, 
             speechDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Speech"),
             speechRecordingPath,
-            currentlyPlayingFilePath;
+            currentPlayingFilePath,
+            imageDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Images", "Captures"),
+            imageSavePath,
+            currentImageFilePath;
 
         List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" }; //These seem broken in the program, "gpt-4-32k", "gpt-4-32k-0613" };
         int tokenCount = 0;
@@ -116,6 +121,11 @@ namespace AssistantAi
             btnClear.IsEnabled = false;
             if (!CostCheck())
                 MessageBox.Show("Either the token or the cost threshold is too high for your default settings.\r\n\r\nEither adjust your token/cost threshold, rephrase your question, or change your model.");
+
+            else if (File.Exists(currentImageFilePath))
+            {
+                await SendMessage();
+            }
 
             else
             {
@@ -160,6 +170,41 @@ namespace AssistantAi
             txtAssistantResponse.Document.Blocks.Clear();
         }
 
+        private void btnGetImage_Click(object sender, RoutedEventArgs e)
+        {
+            try
+            {
+                string fileName = $"Image_{DateTime.Now:yyyyMMddHHmmss}.png";
+                imageSavePath = System.IO.Path.Combine(imageDirectory, fileName);
+                Directory.CreateDirectory(imageDirectory);
+
+                // Capturing the entire screen
+                System.Drawing.Rectangle bounds = System.Windows.Forms.Screen.GetBounds(System.Drawing.Point.Empty);
+                using (Bitmap bitmap = new Bitmap(bounds.Width, bounds.Height))
+                {
+                    using (Graphics g = Graphics.FromImage(bitmap))
+                    {
+                        g.CopyFromScreen(System.Drawing.Point.Empty, System.Drawing.Point.Empty, bounds.Size);
+                    }
+
+                    string imagePath = imageSavePath;
+                    bitmap.Save(imagePath, ImageFormat.Png);
+                    currentImageFilePath = imagePath;
+                    //MessageBox.Show($"Image saved to {imagePath}");
+                    Console.WriteLine($"Image saved to {imagePath}");
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error: {ex.Message}");
+            }
+
+            finally
+            {
+                btnGetImage.IsEnabled = false;
+            }
+        }
+
         private async Task SendMessage()
         {
             string sQuestion = txtQuestion.Text;
@@ -181,17 +226,42 @@ namespace AssistantAi
 
             if (ckbxMute.IsChecked == true)
             {
-                try
+                if (File.Exists(currentImageFilePath))
                 {
-                    //string sAnswer = SendMsg(sQuestion) + "";
-                    string sAnswer = await SendMsgAsync(sQuestion) + "";
-                    await AssistantResponseWindow("Chat GPT: ", sAnswer);
-                    //txtAssistantResponse.AppendText("\r\nChat GPT: " + sAnswer.Replace("\n", "\r\n").Trim() + "\r\n");                
+                    try
+                    {
+                        string base64Image = EncodeImageToBase64(currentImageFilePath); // Provide the correct path
+                        string sAnswer = await SendImageMsgAsync(sQuestion, base64Image);
+                        await AssistantResponseWindow("Chat GPT: ", sAnswer);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                    }
+
+                    finally
+                    {
+                        await DeleteFileAsync(currentImageFilePath);
+                        currentImageFilePath = null;
+                        btnGetImage.IsEnabled = true;
+                    }
                 }
 
-                catch (Exception ex)
+                else
                 {
-                    txtAssistantResponse.AppendText("Error: " + ex.Message);
+                    try
+                    {
+                        //string sAnswer = SendMsg(sQuestion) + "";
+                        string sAnswer = await SendMsgAsync(sQuestion) + "";
+                        await AssistantResponseWindow("Chat GPT: ", sAnswer);
+                        //txtAssistantResponse.AppendText("\r\nChat GPT: " + sAnswer.Replace("\n", "\r\n").Trim() + "\r\n");                
+                    }
+
+                    catch (Exception ex)
+                    {
+                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                    }
                 }
             }
 
@@ -272,6 +342,7 @@ namespace AssistantAi
                         var oMessage = (JObject)oChoice["message"];
                         sResponse = (string)oMessage["content"];
                     }
+
                     else
                     {
                         sResponse = (string)oChoice["text"];
@@ -333,13 +404,77 @@ namespace AssistantAi
             }
         }
 
+        public async Task<string> SendImageMsgAsync(string sQuestion, string base64Image = null)
+        {
+            if (base64Image == null)
+            {
+                MessageBox.Show("No image provided.");
+                return "";
+            }
+
+            // Set up HttpClient
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
+                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                // Payload
+                var payload = new
+                {
+                    model = defaultImageModel, // Make sure this is set to your image model
+                    messages = new[]
+                    {
+                        new
+                        {
+                            role = "user",
+                            content = new object[]
+                            {
+                                new { type = "text", text = sQuestion },
+                                new { type = "image_url", image_url = new { url = $"data:image/jpeg;base64,{base64Image}" } }
+                            }
+                        }
+                    },
+                    max_tokens = 300
+                };
+
+                // Send Request
+                var jsonPayload = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                try
+                {
+                    var response = await httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content);
+                    response.EnsureSuccessStatusCode();
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    // Deserialize the JSON response
+                    var oJson = JsonConvert.DeserializeObject<Dictionary<string, object>>(responseContent);
+                    var oChoices = (JArray)oJson["choices"]; 
+                    var oChoice = (JObject)oChoices[0]; 
+                    string sResponse = "";
+
+                    var oMessage = (JObject)oChoice["message"];
+                    sResponse = (string)oMessage["content"];
+
+                    return sResponse;
+                }
+
+                catch (Exception ex)
+                {
+                    // Handle exceptions
+                    MessageBox.Show($"Error sending image to OpenAI: {ex.Message}");
+                    return "";
+                }
+            }
+        }
+
         private async Task PlayMp3File(string filePath)
         {
             try
             {
                 mediaPlayer.Open(new Uri(filePath));
                 mediaPlayer.Play();
-                currentlyPlayingFilePath = filePath; // Track the currently playing file
+                currentPlayingFilePath = filePath; // Track the currently playing file
             }
             catch (Exception ex)
             {
@@ -352,12 +487,12 @@ namespace AssistantAi
         {
             // Handle media ended event
             await Task.Delay(500); // Short delay to ensure media is fully released
-            await DeleteFileAsync(currentlyPlayingFilePath); // Assuming you have a way to track this
+            await DeleteFileAsync(currentPlayingFilePath); // Assuming you have a way to track this
         }
 
         private void MediaPlayer_MediaFailed(object sender, EventArgs e)
         {
-            MessageBox.Show(@"Error playback on file: " + currentlyPlayingFilePath.ToString());
+            MessageBox.Show(@"Error playback on file: " + currentPlayingFilePath.ToString());
         }
 
         public async Task<string> WhisperMsgAsync(string audioFilePath, string modelName, string modelType)
@@ -398,6 +533,12 @@ namespace AssistantAi
                     await DeleteFileAsync(audioFilePath);
                 }
             }
+        }
+
+        private string EncodeImageToBase64(string imagePath)
+        {
+            byte[] imageArray = System.IO.File.ReadAllBytes(imagePath);
+            return Convert.ToBase64String(imageArray);
         }
 
         private async Task DeleteFileAsync(string filePath)
