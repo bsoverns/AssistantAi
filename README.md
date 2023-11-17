@@ -4,6 +4,7 @@ WPF Program designed to interact with a user and OpenAI endpoints.  Please keep 
 The program allows you to perform the following:
 1. Interact with standard ChatGpt3.5 and ChatGpt4
 2. Interact with Whisper Transcribe, Translate, and Speech.
+3. Interact with Vision.
 
 Install Steps:
 1. Clone project.
