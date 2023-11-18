@@ -179,7 +179,7 @@ namespace AssistantAi
             try
             {
                 this.Visibility = Visibility.Hidden;
-                await Task.Delay(100);
+                await Task.Delay(500);
 
                 string fileName = $"Image_{DateTime.Now:yyyyMMddHHmmss}.png";
                 imageSavePath = System.IO.Path.Combine(imageDirectory, fileName);
