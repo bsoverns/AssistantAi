@@ -36,6 +36,7 @@ namespace AssistantAi
     #region COSTS
 
     /* Notes on prices 11/09/2023
+    https://openai.com/pricing#language-models
     "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k" 
 
     GPT-4 Turbo
@@ -102,7 +103,8 @@ namespace AssistantAi
             currentImageFilePath,
             errorLogDirectory;
 
-        List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" }; //These seem broken in the program, "gpt-4-32k", "gpt-4-32k-0613" };
+        List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-1106", "gpt-4" }; //These seem broken in the program, "gpt-4-32k" };
+
         int tokenCount = 0;
         double estimatedCost = 0;        
 
@@ -242,6 +244,8 @@ namespace AssistantAi
 
                     catch (Exception ex)
                     {
+                        LogWriter errorLog = new LogWriter();
+                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
                         txtAssistantResponse.AppendText("Error: " + ex.Message);
                     }
 
@@ -363,7 +367,7 @@ namespace AssistantAi
                 catch (HttpRequestException ex)
                 {
                     LogWriter errorLog = new LogWriter();
-                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    errorLog.WriteLog(errorLogDirectory, sQuestion + ":\r\n " + ex.ToString());
                     Console.WriteLine($"Request exception: {ex.Message}");
                     return "";
                 }
@@ -409,7 +413,7 @@ namespace AssistantAi
                 catch (HttpRequestException ex)
                 {
                     LogWriter errorLog = new LogWriter();
-                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    errorLog.WriteLog(errorLogDirectory, textToConvert + ":\r\n " + ex.ToString());
                     Console.WriteLine($"Request exception: {ex.Message}");
                 }
             }
@@ -473,7 +477,7 @@ namespace AssistantAi
                 catch (Exception ex)
                 {
                     LogWriter errorLog = new LogWriter();
-                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    errorLog.WriteLog(errorLogDirectory, sQuestion + ":\r\n " + ex.ToString());
                     MessageBox.Show($"Error sending image to OpenAI: {ex.Message}");
                     return "";
                 }
@@ -571,6 +575,36 @@ namespace AssistantAi
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 MessageBox.Show($"Delete File Exception: {ex.Message}");
             }
+        }
+        
+        private static double CalculatePrice(int tokens, string modelName)
+        {
+            
+            //https://platform.openai.com/docs/models
+            // Per 1000 tokens for each model
+            var pricing = new Dictionary<string, (double inputPrice, double outputPrice)>
+            {
+                { "gpt-3.5-turbo-1106", (0.0010, 0.0020) },
+                { "gpt-3.5-turbo", (0.0010, 0.0020) },
+                { "gpt-3.5-turbo-16k", (0.0010, 0.0020) },
+                { "gpt-4", (0.03, 0.06) }
+                //{ "gpt-4-32k", (0.06, 0.12) }, May not be released yet because it is broken               
+            };
+
+            // Calculate the price based on the number of tokens and the specified model
+            if (pricing.TryGetValue(modelName.ToLower(), out var prices))
+            {
+                // Assuming the cost is the same for input and output tokens
+                // Calculate the total price for both input and output
+                double totalPrice = (tokens / 1000.0) * (prices.inputPrice + prices.outputPrice);
+                return totalPrice;
+            }
+
+            else
+            {
+                throw new ArgumentException($"Model name '{modelName}' is not recognized.");
+            }
+
         }
 
         private async Task SetDefaultsAsync()
@@ -687,6 +721,7 @@ namespace AssistantAi
         {
             try
             {
+                //This is incomplete
                 // Check if the response contains code marked by ```
                 int firstIndex = response.IndexOf("```");
                 int lastIndex = response.LastIndexOf("```");
@@ -722,6 +757,7 @@ namespace AssistantAi
             }
         }
 
+        //This is incomplete
         private void AppendTextToRichTextBox(string text, bool isCodeBlock = false)
         {
             Paragraph paragraph = new Paragraph();
@@ -740,6 +776,7 @@ namespace AssistantAi
             txtAssistantResponse.Document.Blocks.Add(paragraph);
         }
 
+        //This is incomplete
         private void HighlightCode(Paragraph paragraph, string code)
         {
             // Define colors for syntax highlighting
@@ -838,7 +875,7 @@ namespace AssistantAi
                         string whisperTypeString = whisperType.ToString(); // Assume whisperType is an enum or similar
                         string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
 
-                        await AssistantResponseWindow("Whisper " + properCase + ": ", response);
+                        await AssistantResponseWindow("Whisper " + properCase + ":\r\n ", response);
                     }
 
                     catch (Exception ex)
@@ -984,32 +1021,6 @@ namespace AssistantAi
             int tokenCount = (int)Math.Ceiling((double)characterCountIncludingSpaces / avgCharsPerToken);
 
             return tokenCount;
-        }
-
-        private static double CalculatePrice(int tokens, string modelName)
-        {
-            // Per 1000 tokens for each model
-            var pricing = new Dictionary<string, (double inputPrice, double outputPrice)>
-            {
-                { "gpt-3.5-turbo-1106", (0.0010, 0.0020) },
-                { "gpt-4", (0.03, 0.06) },
-                { "gpt-4-32k", (0.06, 0.12) },
-                { "gpt-3.5-turbo", (0.0010, 0.0020) },
-                { "gpt-3.5-turbo-16k", (0.0010, 0.0020) }
-            };
-            
-            // Calculate the price based on the number of tokens and the specified model
-            if (pricing.TryGetValue(modelName.ToLower(), out var prices))
-            {
-                // Assuming the cost is the same for input and output tokens
-                // Calculate the total price for both input and output
-                double totalPrice = (tokens / 1000.0) * (prices.inputPrice + prices.outputPrice);
-                return totalPrice;
-            }
-            else
-            {
-                throw new ArgumentException($"Model name '{modelName}' is not recognized.");
-            }
         }
 
         private string PadInput(string s)
