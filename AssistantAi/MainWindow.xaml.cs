@@ -29,12 +29,14 @@ using YourNamespace;
 using System.Configuration;
 using System.Windows.Threading;
 using System.Drawing.Imaging;
+using AssistantAi.Class;
 
 namespace AssistantAi
 {
     #region COSTS
 
     /* Notes on prices 11/09/2023
+    https://openai.com/pricing#language-models
     "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k" 
 
     GPT-4 Turbo
@@ -83,7 +85,7 @@ namespace AssistantAi
         public AudioRecorder audioRecorder = new AudioRecorder();
         private MediaPlayer mediaPlayer;
         public DispatcherTimer countdownTimer;
-        public int countdownValue = 30; 
+        public int countdownValue = 30;
 
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
@@ -91,16 +93,18 @@ namespace AssistantAi
             defaultWhisperModel = @"transcriptions",
             defaultAudioVoice = @"onyx", 
             defaultImageModel = @"gpt-4-vision-preview",
-            recordingsDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Recordings"),
+            recordingsDirectory,
             currentRecordingPath, 
-            speechDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Speech"),
+            speechDirectory,
             speechRecordingPath,
             currentPlayingFilePath,
-            imageDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Images", "Captures"),
+            imageDirectory,
             imageSavePath,
-            currentImageFilePath;
+            currentImageFilePath,
+            errorLogDirectory;
 
-        List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" }; //These seem broken in the program, "gpt-4-32k", "gpt-4-32k-0613" };
+        List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-1106", "gpt-4" }; //These seem broken in the program, "gpt-4-32k" };
+
         int tokenCount = 0;
         double estimatedCost = 0;        
 
@@ -170,10 +174,13 @@ namespace AssistantAi
             txtAssistantResponse.Document.Blocks.Clear();
         }
 
-        private void btnGetImage_Click(object sender, RoutedEventArgs e)
-        {
+        private async void btnGetImage_Click(object sender, RoutedEventArgs e)
+        {            
             try
             {
+                this.Visibility = Visibility.Hidden;
+                await Task.Delay(100);
+
                 string fileName = $"Image_{DateTime.Now:yyyyMMddHHmmss}.png";
                 imageSavePath = System.IO.Path.Combine(imageDirectory, fileName);
                 Directory.CreateDirectory(imageDirectory);
@@ -193,15 +200,57 @@ namespace AssistantAi
                     //MessageBox.Show($"Image saved to {imagePath}");
                     Console.WriteLine($"Image saved to {imagePath}");
                 }
+
+                BitmapImage bitmapImage = new BitmapImage();
+
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.UriSource = new Uri(currentImageFilePath, UriKind.Absolute);
+                bitmapImage.EndInit();
+
+                bitmapImage.Freeze();
+
+                ImgPreviewImage.Source = bitmapImage;
             }
+
             catch (Exception ex)
             {
-                MessageBox.Show($"Error: {ex.Message}");
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                MessageBox.Show($"Error: {ex.Message}");                
             }
 
             finally
             {
+                this.Visibility = Visibility.Visible;                
                 btnGetImage.IsEnabled = false;
+                btnResetImage.IsEnabled = true;
+            }
+        }
+
+        private async void btnResetImage_Click(object sender, RoutedEventArgs e)
+        {
+            if (File.Exists(currentImageFilePath))
+            {
+                try
+                {
+                    ImgPreviewImage.Source = null;
+                    await DeleteFileAsync(currentImageFilePath);
+                }
+
+                catch (Exception ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    txtAssistantResponse.AppendText("Error:\r\n" + ex.Message);
+                }
+
+                finally
+                {
+                    currentImageFilePath = null;
+                    btnGetImage.IsEnabled = true;
+                    btnResetImage.IsEnabled = false;
+                }
             }
         }
 
@@ -237,14 +286,18 @@ namespace AssistantAi
 
                     catch (Exception ex)
                     {
+                        LogWriter errorLog = new LogWriter();
+                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
                         txtAssistantResponse.AppendText("Error: " + ex.Message);
                     }
 
                     finally
                     {
                         await DeleteFileAsync(currentImageFilePath);
+                        ImgPreviewImage.Source = null;
                         currentImageFilePath = null;
                         btnGetImage.IsEnabled = true;
+                        btnResetImage.IsEnabled = false;
                     }
                 }
 
@@ -260,6 +313,8 @@ namespace AssistantAi
 
                     catch (Exception ex)
                     {
+                        LogWriter errorLog = new LogWriter();
+                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
                         txtAssistantResponse.AppendText("Error: " + ex.Message);
                     }
                 }
@@ -281,6 +336,8 @@ namespace AssistantAi
 
                 catch (Exception ex)
                 {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
                     txtAssistantResponse.AppendText("Error: " + ex.Message);
                 }
             }
@@ -306,7 +363,7 @@ namespace AssistantAi
                     payload = new
                     {
                         model = sModel,
-                        messages = new[] { new { role = "user", content = PadQuotes(sQuestion) } }
+                        messages = new[] { new { role = "user", content = PadInput(sQuestion) } }
                     };
                 }
                 else
@@ -314,7 +371,7 @@ namespace AssistantAi
                     payload = new
                     {
                         model = sModel,
-                        prompt = PadQuotes(sQuestion),
+                        prompt = PadInput(sQuestion),
                         max_tokens = int.Parse(txtMaxTokens.Text),
                         temperature = double.Parse(txtTemperature.Text),
                         // Other parameters if needed
@@ -351,10 +408,11 @@ namespace AssistantAi
                     return sResponse;
                 }
 
-                catch (HttpRequestException e)
+                catch (HttpRequestException ex)
                 {
-                    // Handle exception.
-                    Console.WriteLine($"Request exception: {e.Message}");
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, sQuestion + ":\r\n " + ex.ToString());
+                    Console.WriteLine($"Request exception: {ex.Message}");
                     return "";
                 }
             }
@@ -396,10 +454,11 @@ namespace AssistantAi
                     await PlayMp3File(outputFilePath);
                 }
 
-                catch (HttpRequestException e)
+                catch (HttpRequestException ex)
                 {
-                    // Handle exception.
-                    Console.WriteLine($"Request exception: {e.Message}");
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, textToConvert + ":\r\n " + ex.ToString());
+                    Console.WriteLine($"Request exception: {ex.Message}");
                 }
             }
         }
@@ -461,7 +520,8 @@ namespace AssistantAi
 
                 catch (Exception ex)
                 {
-                    // Handle exceptions
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, sQuestion + ":\r\n " + ex.ToString());
                     MessageBox.Show($"Error sending image to OpenAI: {ex.Message}");
                     return "";
                 }
@@ -478,6 +538,8 @@ namespace AssistantAi
             }
             catch (Exception ex)
             {
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 MessageBox.Show($"Playback Exception: {ex.Message}");
                 await DeleteFileAsync(filePath);
             }
@@ -523,7 +585,8 @@ namespace AssistantAi
 
                 catch (HttpRequestException ex)
                 {
-                    // Handle exception
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
                     Console.WriteLine("An error occurred while sending the request: " + ex.Message);
                     return null;
                 }
@@ -552,22 +615,60 @@ namespace AssistantAi
             }
             catch (Exception ex)
             {
-                // Handle exceptions related to file deletion
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 MessageBox.Show($"Delete File Exception: {ex.Message}");
             }
+        }
+        
+        private static double CalculatePrice(int tokens, string modelName)
+        {
+            
+            //https://platform.openai.com/docs/models
+            // Per 1000 tokens for each model
+            var pricing = new Dictionary<string, (double inputPrice, double outputPrice)>
+            {
+                { "gpt-3.5-turbo-1106", (0.0010, 0.0020) },
+                { "gpt-3.5-turbo", (0.0010, 0.0020) },
+                { "gpt-3.5-turbo-16k", (0.0010, 0.0020) },
+                { "gpt-4", (0.03, 0.06) }
+                //{ "gpt-4-32k", (0.06, 0.12) }, May not be released yet because it is broken               
+            };
+
+            // Calculate the price based on the number of tokens and the specified model
+            if (pricing.TryGetValue(modelName.ToLower(), out var prices))
+            {
+                // Assuming the cost is the same for input and output tokens
+                // Calculate the total price for both input and output
+                double totalPrice = (tokens / 1000.0) * (prices.inputPrice + prices.outputPrice);
+                return totalPrice;
+            }
+
+            else
+            {
+                throw new ArgumentException($"Model name '{modelName}' is not recognized.");
+            }
+
         }
 
         private async Task SetDefaultsAsync()
         {
+            recordingsDirectory = System.IO.Path.Combine(programLocation, @"Files\Sound recordings", "Recordings");
+            speechDirectory = System.IO.Path.Combine(programLocation, @"Files\Sound recordings", "Speech");
+            imageDirectory = System.IO.Path.Combine(programLocation, @"Files\Images", "Captures");
+            errorLogDirectory = System.IO.Path.Combine(programLocation, @"Files\ErrorLogs");
             txtAssistantResponse.Document.Blocks.Clear();
 
-            // Add default user
+            // Add default user role
+            // Not used right now
             txtUserId.Text = @"1";
 
             // Add default temperature
+            //https://platform.openai.com/docs/guides/text-generation/reproducible-outputs
             txtTemperature.Text = @"0.5";
 
             // Add items to cmbModel
+            // https://platform.openai.com/docs/guides/text-generation
             cmbModel.Items.Add("gpt-3.5-turbo"); //4,097 tokens	Up to Sep 2021
             cmbModel.Items.Add("gpt-3.5-turbo-16k"); //16,385 tokens	Up to Sep 2021
             cmbModel.Items.Add("gpt-3.5-turbo-1106");
@@ -575,9 +676,12 @@ namespace AssistantAi
             //cmbModel.Items.Add("gpt-4-32k"); //32,768 tokens	Up to Sep 2021        
 
             // Add items to cmbWhisperModel
+            // https://platform.openai.com/docs/guides/speech-to-text
             cmbWhisperModel.Items.Add("transcriptions");
             cmbWhisperModel.Items.Add("translations");
 
+            // Adds audio voices currently active
+            // https://platform.openai.com/docs/guides/text-to-speech
             cmbAudioVoice.Items.Add("alloy");
             cmbAudioVoice.Items.Add("echo");
             cmbAudioVoice.Items.Add("fable");
@@ -601,22 +705,37 @@ namespace AssistantAi
             txtQuestion.Background = new SolidColorBrush(Colors.LightGray);
             txtQuestion.Foreground = new SolidColorBrush(Colors.Black);
             txtQuestion.FontFamily = new System.Windows.Media.FontFamily("Courier New");
-            txtQuestion.FontSize = 15; // This sets the font size to 15
+            txtQuestion.FontSize = 15; 
 
             // Set colors and fonts for txtAssistantResponse
             txtAssistantResponse.Background = new SolidColorBrush(Colors.LightGray);
             txtAssistantResponse.Foreground = new SolidColorBrush(Colors.Black);
             txtAssistantResponse.FontFamily = new System.Windows.Media.FontFamily("Courier New");
-            txtAssistantResponse.FontSize = 15; // This sets the font size to 15
-
-            // Set default text for testing
-            //txtQuestion.Text = "This is a test of an API key, are you receiving this?";
-            //txtAssistantResponse.Text = "Response";
-            //txtWhisperSpeechResponse.Text = "Response";
+            txtAssistantResponse.FontSize = 15; 
 
             await LoadApiKey();
             await CheckApiKey();
             txtQuestion.Focus();
+        }
+
+        public async Task LoadApiKey()
+        {
+            string apiKeyPathway = System.IO.Path.Combine(programLocation, @"Files\ApiKey.json");
+            var workBench = new AssistantAi.Classes.OpenAiWorkBench();
+
+            // Destructure the tuple into two variables: isLoaded and config
+            var (isLoaded, config) = await workBench.LoadFromFileAsync(apiKeyPathway);
+
+            if (isLoaded && config != null)
+            {
+                openAIApiKey = config.OpenAiKey;
+                Console.WriteLine($"OpenAI API Key loaded: {config.OpenAiKey}");
+            }
+
+            else
+            {
+                Console.WriteLine("Failed to load the OpenAI API Key.");
+            }
         }
 
         private async Task CheckApiKey()
@@ -646,6 +765,7 @@ namespace AssistantAi
         {
             try
             {
+                //This is incomplete
                 // Check if the response contains code marked by ```
                 int firstIndex = response.IndexOf("```");
                 int lastIndex = response.LastIndexOf("```");
@@ -674,11 +794,14 @@ namespace AssistantAi
             }
             catch (Exception ex)
             {
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 AppendTextToRichTextBox("Error: " + ex.Message);
                 txtAssistantResponse.ScrollToEnd();
             }
         }
 
+        //This is incomplete
         private void AppendTextToRichTextBox(string text, bool isCodeBlock = false)
         {
             Paragraph paragraph = new Paragraph();
@@ -695,8 +818,9 @@ namespace AssistantAi
             }
 
             txtAssistantResponse.Document.Blocks.Add(paragraph);
-        }
+        }        
 
+        //This is incomplete
         private void HighlightCode(Paragraph paragraph, string code)
         {
             // Define colors for syntax highlighting
@@ -795,12 +919,14 @@ namespace AssistantAi
                         string whisperTypeString = whisperType.ToString(); // Assume whisperType is an enum or similar
                         string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
 
-                        await AssistantResponseWindow("Whisper " + properCase + ": ", response);
+                        await AssistantResponseWindow("Whisper " + properCase + ":\r\n ", response);
                     }
 
                     catch (Exception ex)
                     {
-                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                        LogWriter errorLog = new LogWriter();
+                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                        txtAssistantResponse.AppendText("Error:\r\n" + ex.Message);
                     }
                 }
 
@@ -819,6 +945,8 @@ namespace AssistantAi
 
                     catch (Exception ex)
                     {
+                        LogWriter errorLog = new LogWriter();
+                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
                         txtAssistantResponse.AppendText("Error: " + ex.Message);
                     }
                 }
@@ -849,6 +977,8 @@ namespace AssistantAi
 
             catch (Exception ex)
             {
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 MessageBox.Show($"An error occurred while starting recording: {ex.Message}");
             }
         }
@@ -937,54 +1067,7 @@ namespace AssistantAi
             return tokenCount;
         }
 
-        private static double CalculatePrice(int tokens, string modelName)
-        {
-            // Per 1000 tokens for each model
-            var pricing = new Dictionary<string, (double inputPrice, double outputPrice)>
-            {
-                { "gpt-3.5-turbo-1106", (0.0010, 0.0020) },
-                { "gpt-4", (0.03, 0.06) },
-                { "gpt-4-32k", (0.06, 0.12) },
-                { "gpt-3.5-turbo", (0.0010, 0.0020) },
-                { "gpt-3.5-turbo-16k", (0.0010, 0.0020) }
-            };
-            
-            // Calculate the price based on the number of tokens and the specified model
-            if (pricing.TryGetValue(modelName.ToLower(), out var prices))
-            {
-                // Assuming the cost is the same for input and output tokens
-                // Calculate the total price for both input and output
-                double totalPrice = (tokens / 1000.0) * (prices.inputPrice + prices.outputPrice);
-                return totalPrice;
-            }
-            else
-            {
-                throw new ArgumentException($"Model name '{modelName}' is not recognized.");
-            }
-        }
-
-        public async Task LoadApiKey()
-        {
-            string apiKeyPathway = System.IO.Path.Combine(programLocation, @"Files\ApiKey.json"); // Assuming the file is named ApiKey.json
-            var workBench = new AssistantAi.Classes.OpenAiWorkBench();
-
-            // Destructure the tuple into two variables: isLoaded and config
-            var (isLoaded, config) = await workBench.LoadFromFileAsync(apiKeyPathway);
-
-            if (isLoaded && config != null)
-            {
-                openAIApiKey = config.OpenAiKey;
-                Console.WriteLine($"OpenAI API Key loaded: {config.OpenAiKey}");
-                // You can now use config.OpenAiKey in your application.
-            }
-            else
-            {
-                Console.WriteLine("Failed to load the OpenAI API Key.");
-                // Handle the failure case as needed.
-            }
-        }
-
-        private string PadQuotes(string s)
+        private string PadInput(string s)
         {
             if (s.IndexOf("\\") != -1)
                 s = s.Replace("\\", "\\\\");

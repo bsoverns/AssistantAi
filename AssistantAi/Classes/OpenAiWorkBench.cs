@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 
 namespace AssistantAi.Classes
 {
+    //This is just the class to load, save, and hold the API key
     internal class OpenAiWorkBench
     {
         public class OpenAiConfig

@@ -112,7 +112,7 @@
                             <StatusBarItem>
                                 <ProgressBar Name="ListeningModeProgressBar" Width="175" Height="20" Minimum="0" Maximum="100"/>
                             </StatusBarItem>
-                        </StatusBar>
+                        </StatusBar>                        
                     </Grid>
 
                     <!-- Fourth set of controls -->
@@ -135,6 +135,8 @@
                         <Label Content="Max Dollars" Grid.Column="2" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <TextBox Name="txtMaxDollars" Grid.Column="3" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
                         <Button Name="btnGetImage" Content="Get Image" Grid.Column="6" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left" Click="btnGetImage_Click"/>
+                        <Button Name="btnResetImage" Content="Reset Image" Grid.Column="7" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left" IsEnabled="False" Click="btnResetImage_Click"/>
+                        <Image Name="ImgPreviewImage" Grid.Column="8" Margin="8,8,0,0"/>
                     </Grid>
                 </Grid>
             </GroupBox>
