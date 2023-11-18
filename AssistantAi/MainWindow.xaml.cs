@@ -174,10 +174,13 @@ namespace AssistantAi
             txtAssistantResponse.Document.Blocks.Clear();
         }
 
-        private void btnGetImage_Click(object sender, RoutedEventArgs e)
-        {
+        private async void btnGetImage_Click(object sender, RoutedEventArgs e)
+        {            
             try
             {
+                this.Visibility = Visibility.Hidden;
+                await Task.Delay(100);
+
                 string fileName = $"Image_{DateTime.Now:yyyyMMddHHmmss}.png";
                 imageSavePath = System.IO.Path.Combine(imageDirectory, fileName);
                 Directory.CreateDirectory(imageDirectory);
@@ -197,18 +200,57 @@ namespace AssistantAi
                     //MessageBox.Show($"Image saved to {imagePath}");
                     Console.WriteLine($"Image saved to {imagePath}");
                 }
+
+                BitmapImage bitmapImage = new BitmapImage();
+
+                bitmapImage.BeginInit();
+                bitmapImage.CacheOption = BitmapCacheOption.OnLoad;
+                bitmapImage.UriSource = new Uri(currentImageFilePath, UriKind.Absolute);
+                bitmapImage.EndInit();
+
+                bitmapImage.Freeze();
+
+                ImgPreviewImage.Source = bitmapImage;
             }
+
             catch (Exception ex)
             {
                 LogWriter errorLog = new LogWriter();
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                MessageBox.Show($"Error: {ex.Message}");
-                
+                MessageBox.Show($"Error: {ex.Message}");                
             }
 
             finally
             {
+                this.Visibility = Visibility.Visible;                
                 btnGetImage.IsEnabled = false;
+                btnResetImage.IsEnabled = true;
+            }
+        }
+
+        private async void btnResetImage_Click(object sender, RoutedEventArgs e)
+        {
+            if (File.Exists(currentImageFilePath))
+            {
+                try
+                {
+                    ImgPreviewImage.Source = null;
+                    await DeleteFileAsync(currentImageFilePath);
+                }
+
+                catch (Exception ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    txtAssistantResponse.AppendText("Error:\r\n" + ex.Message);
+                }
+
+                finally
+                {
+                    currentImageFilePath = null;
+                    btnGetImage.IsEnabled = true;
+                    btnResetImage.IsEnabled = false;
+                }
             }
         }
 
@@ -252,8 +294,10 @@ namespace AssistantAi
                     finally
                     {
                         await DeleteFileAsync(currentImageFilePath);
+                        ImgPreviewImage.Source = null;
                         currentImageFilePath = null;
                         btnGetImage.IsEnabled = true;
+                        btnResetImage.IsEnabled = false;
                     }
                 }
 
@@ -774,7 +818,7 @@ namespace AssistantAi
             }
 
             txtAssistantResponse.Document.Blocks.Add(paragraph);
-        }
+        }        
 
         //This is incomplete
         private void HighlightCode(Paragraph paragraph, string code)
@@ -882,7 +926,7 @@ namespace AssistantAi
                     {
                         LogWriter errorLog = new LogWriter();
                         errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                        txtAssistantResponse.AppendText("Error:\r\n" + ex.Message);
                     }
                 }
 
