@@ -29,6 +29,7 @@ using YourNamespace;
 using System.Configuration;
 using System.Windows.Threading;
 using System.Drawing.Imaging;
+using AssistantAi.Class;
 
 namespace AssistantAi
 {
@@ -83,7 +84,7 @@ namespace AssistantAi
         public AudioRecorder audioRecorder = new AudioRecorder();
         private MediaPlayer mediaPlayer;
         public DispatcherTimer countdownTimer;
-        public int countdownValue = 30; 
+        public int countdownValue = 30;
 
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
@@ -91,14 +92,15 @@ namespace AssistantAi
             defaultWhisperModel = @"transcriptions",
             defaultAudioVoice = @"onyx", 
             defaultImageModel = @"gpt-4-vision-preview",
-            recordingsDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Recordings"),
+            recordingsDirectory,
             currentRecordingPath, 
-            speechDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Sound recordings", "Speech"),
+            speechDirectory,
             speechRecordingPath,
             currentPlayingFilePath,
-            imageDirectory = System.IO.Path.Combine(System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location), @"Files\Images", "Captures"),
+            imageDirectory,
             imageSavePath,
-            currentImageFilePath;
+            currentImageFilePath,
+            errorLogDirectory;
 
         List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4" }; //These seem broken in the program, "gpt-4-32k", "gpt-4-32k-0613" };
         int tokenCount = 0;
@@ -196,7 +198,10 @@ namespace AssistantAi
             }
             catch (Exception ex)
             {
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 MessageBox.Show($"Error: {ex.Message}");
+                
             }
 
             finally
@@ -260,6 +265,8 @@ namespace AssistantAi
 
                     catch (Exception ex)
                     {
+                        LogWriter errorLog = new LogWriter();
+                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
                         txtAssistantResponse.AppendText("Error: " + ex.Message);
                     }
                 }
@@ -281,6 +288,8 @@ namespace AssistantAi
 
                 catch (Exception ex)
                 {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
                     txtAssistantResponse.AppendText("Error: " + ex.Message);
                 }
             }
@@ -306,7 +315,7 @@ namespace AssistantAi
                     payload = new
                     {
                         model = sModel,
-                        messages = new[] { new { role = "user", content = PadQuotes(sQuestion) } }
+                        messages = new[] { new { role = "user", content = PadInput(sQuestion) } }
                     };
                 }
                 else
@@ -314,7 +323,7 @@ namespace AssistantAi
                     payload = new
                     {
                         model = sModel,
-                        prompt = PadQuotes(sQuestion),
+                        prompt = PadInput(sQuestion),
                         max_tokens = int.Parse(txtMaxTokens.Text),
                         temperature = double.Parse(txtTemperature.Text),
                         // Other parameters if needed
@@ -351,10 +360,11 @@ namespace AssistantAi
                     return sResponse;
                 }
 
-                catch (HttpRequestException e)
+                catch (HttpRequestException ex)
                 {
-                    // Handle exception.
-                    Console.WriteLine($"Request exception: {e.Message}");
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    Console.WriteLine($"Request exception: {ex.Message}");
                     return "";
                 }
             }
@@ -396,10 +406,11 @@ namespace AssistantAi
                     await PlayMp3File(outputFilePath);
                 }
 
-                catch (HttpRequestException e)
+                catch (HttpRequestException ex)
                 {
-                    // Handle exception.
-                    Console.WriteLine($"Request exception: {e.Message}");
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    Console.WriteLine($"Request exception: {ex.Message}");
                 }
             }
         }
@@ -461,7 +472,8 @@ namespace AssistantAi
 
                 catch (Exception ex)
                 {
-                    // Handle exceptions
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
                     MessageBox.Show($"Error sending image to OpenAI: {ex.Message}");
                     return "";
                 }
@@ -478,6 +490,8 @@ namespace AssistantAi
             }
             catch (Exception ex)
             {
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 MessageBox.Show($"Playback Exception: {ex.Message}");
                 await DeleteFileAsync(filePath);
             }
@@ -523,7 +537,8 @@ namespace AssistantAi
 
                 catch (HttpRequestException ex)
                 {
-                    // Handle exception
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
                     Console.WriteLine("An error occurred while sending the request: " + ex.Message);
                     return null;
                 }
@@ -552,22 +567,30 @@ namespace AssistantAi
             }
             catch (Exception ex)
             {
-                // Handle exceptions related to file deletion
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 MessageBox.Show($"Delete File Exception: {ex.Message}");
             }
         }
 
         private async Task SetDefaultsAsync()
         {
+            recordingsDirectory = System.IO.Path.Combine(programLocation, @"Files\Sound recordings", "Recordings");
+            speechDirectory = System.IO.Path.Combine(programLocation, @"Files\Sound recordings", "Speech");
+            imageDirectory = System.IO.Path.Combine(programLocation, @"Files\Images", "Captures");
+            errorLogDirectory = System.IO.Path.Combine(programLocation, @"Files\ErrorLogs");
             txtAssistantResponse.Document.Blocks.Clear();
 
-            // Add default user
+            // Add default user role
+            // Not used right now
             txtUserId.Text = @"1";
 
             // Add default temperature
+            //https://platform.openai.com/docs/guides/text-generation/reproducible-outputs
             txtTemperature.Text = @"0.5";
 
             // Add items to cmbModel
+            // https://platform.openai.com/docs/guides/text-generation
             cmbModel.Items.Add("gpt-3.5-turbo"); //4,097 tokens	Up to Sep 2021
             cmbModel.Items.Add("gpt-3.5-turbo-16k"); //16,385 tokens	Up to Sep 2021
             cmbModel.Items.Add("gpt-3.5-turbo-1106");
@@ -575,9 +598,12 @@ namespace AssistantAi
             //cmbModel.Items.Add("gpt-4-32k"); //32,768 tokens	Up to Sep 2021        
 
             // Add items to cmbWhisperModel
+            // https://platform.openai.com/docs/guides/speech-to-text
             cmbWhisperModel.Items.Add("transcriptions");
             cmbWhisperModel.Items.Add("translations");
 
+            // Adds audio voices currently active
+            // https://platform.openai.com/docs/guides/text-to-speech
             cmbAudioVoice.Items.Add("alloy");
             cmbAudioVoice.Items.Add("echo");
             cmbAudioVoice.Items.Add("fable");
@@ -601,22 +627,37 @@ namespace AssistantAi
             txtQuestion.Background = new SolidColorBrush(Colors.LightGray);
             txtQuestion.Foreground = new SolidColorBrush(Colors.Black);
             txtQuestion.FontFamily = new System.Windows.Media.FontFamily("Courier New");
-            txtQuestion.FontSize = 15; // This sets the font size to 15
+            txtQuestion.FontSize = 15; 
 
             // Set colors and fonts for txtAssistantResponse
             txtAssistantResponse.Background = new SolidColorBrush(Colors.LightGray);
             txtAssistantResponse.Foreground = new SolidColorBrush(Colors.Black);
             txtAssistantResponse.FontFamily = new System.Windows.Media.FontFamily("Courier New");
-            txtAssistantResponse.FontSize = 15; // This sets the font size to 15
-
-            // Set default text for testing
-            //txtQuestion.Text = "This is a test of an API key, are you receiving this?";
-            //txtAssistantResponse.Text = "Response";
-            //txtWhisperSpeechResponse.Text = "Response";
+            txtAssistantResponse.FontSize = 15; 
 
             await LoadApiKey();
             await CheckApiKey();
             txtQuestion.Focus();
+        }
+
+        public async Task LoadApiKey()
+        {
+            string apiKeyPathway = System.IO.Path.Combine(programLocation, @"Files\ApiKey.json");
+            var workBench = new AssistantAi.Classes.OpenAiWorkBench();
+
+            // Destructure the tuple into two variables: isLoaded and config
+            var (isLoaded, config) = await workBench.LoadFromFileAsync(apiKeyPathway);
+
+            if (isLoaded && config != null)
+            {
+                openAIApiKey = config.OpenAiKey;
+                Console.WriteLine($"OpenAI API Key loaded: {config.OpenAiKey}");
+            }
+
+            else
+            {
+                Console.WriteLine("Failed to load the OpenAI API Key.");
+            }
         }
 
         private async Task CheckApiKey()
@@ -674,6 +715,8 @@ namespace AssistantAi
             }
             catch (Exception ex)
             {
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 AppendTextToRichTextBox("Error: " + ex.Message);
                 txtAssistantResponse.ScrollToEnd();
             }
@@ -800,6 +843,8 @@ namespace AssistantAi
 
                     catch (Exception ex)
                     {
+                        LogWriter errorLog = new LogWriter();
+                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
                         txtAssistantResponse.AppendText("Error: " + ex.Message);
                     }
                 }
@@ -819,6 +864,8 @@ namespace AssistantAi
 
                     catch (Exception ex)
                     {
+                        LogWriter errorLog = new LogWriter();
+                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
                         txtAssistantResponse.AppendText("Error: " + ex.Message);
                     }
                 }
@@ -849,6 +896,8 @@ namespace AssistantAi
 
             catch (Exception ex)
             {
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 MessageBox.Show($"An error occurred while starting recording: {ex.Message}");
             }
         }
@@ -963,28 +1012,7 @@ namespace AssistantAi
             }
         }
 
-        public async Task LoadApiKey()
-        {
-            string apiKeyPathway = System.IO.Path.Combine(programLocation, @"Files\ApiKey.json"); // Assuming the file is named ApiKey.json
-            var workBench = new AssistantAi.Classes.OpenAiWorkBench();
-
-            // Destructure the tuple into two variables: isLoaded and config
-            var (isLoaded, config) = await workBench.LoadFromFileAsync(apiKeyPathway);
-
-            if (isLoaded && config != null)
-            {
-                openAIApiKey = config.OpenAiKey;
-                Console.WriteLine($"OpenAI API Key loaded: {config.OpenAiKey}");
-                // You can now use config.OpenAiKey in your application.
-            }
-            else
-            {
-                Console.WriteLine("Failed to load the OpenAI API Key.");
-                // Handle the failure case as needed.
-            }
-        }
-
-        private string PadQuotes(string s)
+        private string PadInput(string s)
         {
             if (s.IndexOf("\\") != -1)
                 s = s.Replace("\\", "\\\\");
