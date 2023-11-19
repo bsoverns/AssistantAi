@@ -100,18 +100,3 @@ jobs:
         name: Build Artifacts
         path: AssistantAi\bin\${{ matrix.configuration }}
 
-        # Update README
-    - name: Update README with Artifact Link
-      run: |
-        # Construct artifact URL or get it from the upload step
-        ARTIFACT_URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        
-        # Replace placeholder in README
-        sed -i "s|\[AssistantArtifact\]|$ARTIFACT_URL|" README.md
-
-        # Commit and push the change
-        git config --global user.name 'bsoverns'
-        git config --global user.email 'bsoverns@gmail.com'
-        git commit -am "Update README with artifact link"
-        git push
-
