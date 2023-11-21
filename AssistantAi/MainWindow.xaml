@@ -1,6 +1,7 @@
 ﻿<Window x:Class="AssistantAi.MainWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:local="clr-namespace:AssistantAi.Controls"
         Title="Assistant AI" Height="700" Width="1000" MinHeight="700" MinWidth="1000"
         WindowStartupLocation="CenterScreen">
 
@@ -60,6 +61,7 @@
                         <Button Name="btnSend" Content="Send" Grid.Column="0" Click="OnSendButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
                         <Label Content="ChatGpt Model" Grid.Column="1" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <ComboBox Name="cmbModel" Grid.Column="2" Grid.ColumnSpan="2" Margin="8,8,0,0" SelectionChanged="cmbModel_SelectionChanged"/>
+                        <local:Spinner x:Name="SpinnerStatus" HorizontalAlignment="Left" VerticalAlignment="Bottom" Grid.Column="4" Height="24" Width="24" Margin="8,8,0,0" Visibility="Collapsed"/>
                         <Label Content="Voice Model" Grid.Column="5" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <ComboBox Name="cmbAudioVoice" Grid.Column="6" Grid.ColumnSpan="2"  Margin="8,8,0,0" />
                         <CheckBox Name="ckbxMute" Content="Mute Voice" Grid.Column="8" Margin="8,8,0,0" VerticalAlignment="Center"/>

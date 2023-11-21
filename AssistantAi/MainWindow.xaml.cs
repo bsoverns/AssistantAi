@@ -126,15 +126,12 @@ namespace AssistantAi
             if (!CostCheck())
                 MessageBox.Show("Either the token or the cost threshold is too high for your default settings.\r\n\r\nEither adjust your token/cost threshold, rephrase your question, or change your model.");
 
-            else if (File.Exists(currentImageFilePath))
-            {
-                await SendMessage();
-            }
-
             else
             {
+                SpinnerStatus.Visibility = Visibility.Visible;
                 //Text question
                 await SendMessage();
+                SpinnerStatus.Visibility = Visibility.Collapsed;
 
                 /* All test code below; do not remove
                 //Whisper Speech return test
@@ -279,6 +276,7 @@ namespace AssistantAi
                 {
                     try
                     {
+                        SpinnerStatus.Visibility = Visibility.Visible;
                         string base64Image = EncodeImageToBase64(currentImageFilePath); // Provide the correct path
                         string sAnswer = await SendImageMsgAsync(sQuestion, base64Image);
                         await AssistantResponseWindow("Chat GPT: ", sAnswer);
@@ -298,6 +296,7 @@ namespace AssistantAi
                         currentImageFilePath = null;
                         btnGetImage.IsEnabled = true;
                         btnResetImage.IsEnabled = false;
+                        SpinnerStatus.Visibility = Visibility.Collapsed;
                     }
                 }
 
@@ -305,6 +304,7 @@ namespace AssistantAi
                 {
                     try
                     {
+                        SpinnerStatus.Visibility = Visibility.Visible;
                         //string sAnswer = SendMsg(sQuestion) + "";
                         string sAnswer = await SendMsgAsync(sQuestion) + "";
                         await AssistantResponseWindow("Chat GPT: ", sAnswer);
@@ -317,6 +317,11 @@ namespace AssistantAi
                         errorLog.WriteLog(errorLogDirectory, ex.ToString());
                         txtAssistantResponse.AppendText("Error: " + ex.Message);
                     }
+
+                    finally
+                    {
+                        SpinnerStatus.Visibility = Visibility.Collapsed;
+                    }
                 }
             }
 
@@ -324,6 +329,7 @@ namespace AssistantAi
             {
                 try
                 {
+                    SpinnerStatus.Visibility = Visibility.Visible;
                     string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.mp3";
                     speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
                     Directory.CreateDirectory(speechDirectory);
@@ -339,6 +345,11 @@ namespace AssistantAi
                     LogWriter errorLog = new LogWriter();
                     errorLog.WriteLog(errorLogDirectory, ex.ToString());
                     txtAssistantResponse.AppendText("Error: " + ex.Message);
+                }
+
+                finally
+                {
+                    SpinnerStatus.Visibility = Visibility.Collapsed;
                 }
             }
         }
@@ -646,7 +657,7 @@ namespace AssistantAi
 
             else
             {
-                throw new ArgumentException($"Model name '{modelName}' is not recognized.");
+                return 0.0000;
             }
 
         }
@@ -904,6 +915,7 @@ namespace AssistantAi
 
         private async void ckbxListeningMode_Unchecked(object sender, RoutedEventArgs e)
         {
+            SpinnerStatus.Visibility = Visibility.Visible;
             countdownTimer.Stop();
             StopAudioRecording();
             string whisperType = cmbWhisperModel.Text;
@@ -913,7 +925,7 @@ namespace AssistantAi
                 if (ckbxMute.IsChecked == true)
                 {
                     try
-                    {
+                    {                        
                         CultureInfo cultureInfo = CultureInfo.CurrentCulture;
                         TextInfo textInfo = cultureInfo.TextInfo;
                         string whisperTypeString = whisperType.ToString(); // Assume whisperType is an enum or similar
@@ -958,6 +970,7 @@ namespace AssistantAi
             ckbxMute.IsEnabled = true;
             btnSend.IsEnabled = true;
             btnClear.IsEnabled = true;
+            SpinnerStatus.Visibility = Visibility.Collapsed;
         }
 
         private void StartAudioRecording()
