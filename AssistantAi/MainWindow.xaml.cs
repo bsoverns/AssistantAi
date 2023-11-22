@@ -21,7 +21,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Web;
-using AssistantAi.Classes;
 using System.Windows.Media.Media3D;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -30,9 +29,42 @@ using System.Configuration;
 using System.Windows.Threading;
 using System.Drawing.Imaging;
 using AssistantAi.Class;
+using AssistantAi.Classes;
+using HtmlAgilityPack;
 
 namespace AssistantAi
 {
+
+    /*
+    {
+        "page": {
+            "id": "jbxzcdv9xc4d",
+            "name": "OpenAI",
+            "url": "https://status.openai.com",
+            "time_zone": "America/Los_Angeles",
+            "updated_at": "2023-11-21T16:33:40.558-08:00"
+        },
+        "status": {
+        "indicator": "minor",
+            "description": "Minor Service Outage"
+        }
+    }
+
+    {
+        "page": {
+            "id": "jbxzcdv9xc4d",
+            "name": "OpenAI",
+            "url": "https://status.openai.com",
+            "time_zone": "America/Los_Angeles",
+            "updated_at": "2023-11-21T17:46:10.445-08:00"
+        },
+        "status": {
+            "indicator": "none",
+            "description": "All Systems Operational"
+        }
+    }
+    */
+
     #region COSTS
 
     /* Notes on prices 11/09/2023
@@ -86,6 +118,13 @@ namespace AssistantAi
         private MediaPlayer mediaPlayer;
         public DispatcherTimer countdownTimer;
         public int countdownValue = 30;
+     
+        private readonly SolidColorBrush redOn = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 0, 0));
+        private readonly SolidColorBrush redOff = new SolidColorBrush(System.Windows.Media.Color.FromRgb(128, 0, 0)); 
+        private readonly SolidColorBrush yellowOn = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 255, 0));
+        private readonly SolidColorBrush yellowOff = new SolidColorBrush(System.Windows.Media.Color.FromRgb(128, 128, 0));
+        private readonly SolidColorBrush greenOn = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 0));         
+        private readonly SolidColorBrush greenOff = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 128, 0));
 
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
@@ -111,12 +150,72 @@ namespace AssistantAi
         public MainWindow()
         {
             InitializeComponent();
+            UpdateTrafficLight("yellow");
             mediaPlayer = new MediaPlayer();
             mediaPlayer.MediaEnded += MediaPlayer_MediaEnded;
             mediaPlayer.MediaFailed += MediaPlayer_MediaFailed;
             InitializeCountdownTimer();
-            SetDefaultsAsync();            
-        }       
+            SetDefaultsAsync();
+            DownDetectorAsync();
+        }
+
+        private async Task DownDetectorAsync()
+        {
+            bool isApiActive = await CheckApiStatusAsync();
+            if (isApiActive)
+                await UpdateTrafficLight("green");
+            else
+                await UpdateTrafficLight("red");
+        }
+
+        private async Task<bool> CheckApiStatusAsync()
+        {
+            string urlPath = @"https://status.openai.com/api/v2/status.json";
+
+            using (var httpClient = new HttpClient())
+            {
+                try
+                {
+                    string json = await httpClient.GetStringAsync(urlPath);
+                    dynamic statusData = JsonConvert.DeserializeObject(json);
+                    string indicator = statusData.status.indicator;
+                    return indicator == "none";
+                }
+
+                catch (HttpRequestException ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    MessageBox.Show($"Error: {ex.Message}");
+
+                    Console.WriteLine($"Error fetching JSON: {ex.Message}");
+                }
+            }
+
+            return false;
+        }
+
+        public async Task UpdateTrafficLight(string color)
+        {
+            // First, set all lights to "off"
+            RedLight.Fill = redOff;
+            YellowLight.Fill = yellowOff;
+            GreenLight.Fill = greenOff;
+
+            // Then, based on the input, turn the appropriate light "on"
+            switch (color.ToLower())
+            {
+                case "red":
+                    RedLight.Fill = redOn;
+                    break;
+                case "yellow":
+                    YellowLight.Fill = yellowOn;
+                    break;
+                case "green":
+                    GreenLight.Fill = greenOn;
+                    break;
+            }
+        }
 
         private async void OnSendButtonClick(object sender, RoutedEventArgs e)
         {
