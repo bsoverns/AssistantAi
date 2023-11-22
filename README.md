@@ -33,4 +33,5 @@ For the latest stable version, download the build artifact from [AssistantArtifa
 - **Yellow**: Internet connectivity issues detected.
 - **Green**: API is fully operational and accessible.
 
-![image](https://github.com/bsoverns/AssistantAi/assets/12473875/f1f20804-c696-4dbc-8362-bdc0354273cc)
+![image](https://github.com/bsoverns/AssistantAi/assets/12473875/6005d0dc-57ee-41ec-b9fe-61d56014f52a)
+
