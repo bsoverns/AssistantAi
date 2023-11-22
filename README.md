@@ -1,28 +1,36 @@
 # AssistantAi
-WPF Program designed to interact with a user and OpenAI endpoints.  Please keep in mind this is still a work in progress.
 
-The program allows you to perform the following:
-1. Interact with standard ChatGpt3.5 and ChatGpt4
-2. Interact with Whisper Transcribe, Translate, and Speech.
-3. Interact with Vision.
+AssistantAi is a WPF application designed for interactive communication with OpenAI's various endpoints. The application is currently under development, continually evolving with new features and enhancements.
 
-Install Steps:
-1. Clone project.
-2. Build project.
-3. Add OpenApi key on startup.
-  a. The key is stored locally in a file called "ApiKey.json".
-  b. From that point forward when you start the program it will never ask for the key again.
-  c. If you need to remove or update the key, you need to remove the "ApiKey.json" file.
+## Features
 
-If this helps you in any way please donate if possible.  I would like to create more programs like this and improve this one.
+AssistantAi offers a versatile range of functionalities, including:
 
-Or you can download current version from the build artifact [AssistantArtifact] <= Incomplete for now.
-Api Status Lights:
+1. Interaction with OpenAI's ChatGPT models (3.5 and 4).
+2. Usage of Whisper for transcription, translation, and speech processing.
+3. Integration with OpenAI's Vision capabilities.
 
-Red - Api is down.
+## Installation Guide
 
-Yellow - Internet is down\Unable to access internet.
+To set up AssistantAi, please follow these steps:
 
-Green - Api is up.
+1. Clone the repository to your local machine.
+2. Build the project using your preferred IDE or command line tools.
+3. On first launch, add your OpenAI API key. This key is crucial for the application's interaction with OpenAI services.
+   - The key will be stored in a local file named "ApiKey.json".
+   - Once set up, the application will automatically use this key for all future sessions.
+   - To change or remove the key, simply delete the "ApiKey.json" file.
+
+## Support and Contributions
+
+If you find this project helpful or inspiring, consider supporting its development. Your contributions enable the continuous improvement and creation of new and exciting features.
+
+For the latest stable version, download the build artifact from [AssistantArtifact](link_to_build_artifact) *(Note: This is currently a work in progress.)*.
+
+## API Status Indicators
+
+- **Red**: API is currently down.
+- **Yellow**: Internet connectivity issues detected.
+- **Green**: API is fully operational and accessible.
 
 ![image](https://github.com/bsoverns/AssistantAi/assets/12473875/f1f20804-c696-4dbc-8362-bdc0354273cc)
