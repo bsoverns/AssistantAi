@@ -126,6 +126,7 @@ namespace AssistantAi
             mediaPlayer.MediaFailed += MediaPlayer_MediaFailed;
             InitializeCountdownTimer();
             _ = SetDefaultsAsync();
+            _ = DownDetectorAsync();
             TimerForApiCheck();
         }
 
@@ -1118,7 +1119,7 @@ namespace AssistantAi
         {
             apiCheckTimer = new System.Timers.Timer();
             apiCheckTimer.Elapsed += new ElapsedEventHandler(ApiStockTimerElapsedAsync);
-            apiCheckTimer.Interval = 1000;
+            apiCheckTimer.Interval = 30000;
             apiCheckTimer.Enabled = true;
             apiCheckTimer.Start();
         }
