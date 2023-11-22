@@ -18,8 +18,11 @@ If this helps you in any way please donate if possible.  I would like to create 
 
 Or you can download current version from the build artifact [AssistantArtifact] <= Incomplete for now.
 Api Status Lights:
-\r\nRed - Api is down.
-\r\nYellow - Internet is down\Unable to access internet.
-\r\nGreen - Api is up.
+
+Red - Api is down.
+
+Yellow - Internet is down\Unable to access internet.
+
+Green - Api is up.
 
 ![image](https://github.com/bsoverns/AssistantAi/assets/12473875/f1f20804-c696-4dbc-8362-bdc0354273cc)
