@@ -21,7 +21,6 @@ using System.Windows.Media.Imaging;
 using System.Windows.Navigation;
 using System.Windows.Shapes;
 using System.Web;
-using AssistantAi.Classes;
 using System.Windows.Media.Media3D;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
@@ -30,6 +29,9 @@ using System.Configuration;
 using System.Windows.Threading;
 using System.Drawing.Imaging;
 using AssistantAi.Class;
+using AssistantAi.Classes;
+using HtmlAgilityPack;
+using System.Timers;
 
 namespace AssistantAi
 {
@@ -82,10 +84,22 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
+        List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-1106", "gpt-4" }; //These seem broken in the program, "gpt-4-32k" };
+
         public AudioRecorder audioRecorder = new AudioRecorder();
         private MediaPlayer mediaPlayer;
         public DispatcherTimer countdownTimer;
+        System.Timers.Timer apiCheckTimer;
         public int countdownValue = 30;
+        int tokenCount = 0;
+        double estimatedCost = 0;
+
+        private readonly SolidColorBrush redOn = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 0, 0));
+        private readonly SolidColorBrush redOff = new SolidColorBrush(System.Windows.Media.Color.FromRgb(128, 0, 0)); 
+        private readonly SolidColorBrush yellowOn = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 255, 0));
+        private readonly SolidColorBrush yellowOff = new SolidColorBrush(System.Windows.Media.Color.FromRgb(128, 128, 0));
+        private readonly SolidColorBrush greenOn = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 255, 0));         
+        private readonly SolidColorBrush greenOff = new SolidColorBrush(System.Windows.Media.Color.FromRgb(0, 128, 0));
 
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
@@ -103,20 +117,17 @@ namespace AssistantAi
             currentImageFilePath,
             errorLogDirectory;
 
-        List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-1106", "gpt-4" }; //These seem broken in the program, "gpt-4-32k" };
-
-        int tokenCount = 0;
-        double estimatedCost = 0;        
-
         public MainWindow()
         {
             InitializeComponent();
+            UpdateTrafficLight("yellow");
             mediaPlayer = new MediaPlayer();
             mediaPlayer.MediaEnded += MediaPlayer_MediaEnded;
             mediaPlayer.MediaFailed += MediaPlayer_MediaFailed;
             InitializeCountdownTimer();
-            SetDefaultsAsync();            
-        }       
+            _ = SetDefaultsAsync();
+            TimerForApiCheck();
+        }
 
         private async void OnSendButtonClick(object sender, RoutedEventArgs e)
         {
@@ -1102,5 +1113,116 @@ namespace AssistantAi
             else
                 return s;
         }
+
+        private void TimerForApiCheck()
+        {
+            apiCheckTimer = new System.Timers.Timer();
+            apiCheckTimer.Elapsed += new ElapsedEventHandler(ApiStockTimerElapsedAsync);
+            apiCheckTimer.Interval = 1000;
+            apiCheckTimer.Enabled = true;
+            apiCheckTimer.Start();
+        }
+
+        private async void ApiStockTimerElapsedAsync(object sender, ElapsedEventArgs e)
+        {
+            apiCheckTimer.Stop();
+            await DownDetectorAsync();
+            apiCheckTimer.Start();
+        }
+
+        private async Task DownDetectorAsync()
+        {
+            bool isInternetAvailable = await IsInternetAvailable();
+
+            if (!isInternetAvailable)
+            {
+                UpdateTrafficLight("yellow");
+            }
+
+            else
+            {
+                bool isApiActive = await CheckApiStatusAsync();
+
+                if (isApiActive)
+                    UpdateTrafficLight("green");
+                else
+                    UpdateTrafficLight("red");
+            }
+        }
+
+        private async Task<bool> CheckApiStatusAsync()
+        {
+            string urlPath = @"https://status.openai.com/api/v2/status.json";
+
+            using (var httpClient = new HttpClient())
+            {
+                try
+                {
+                    string json = await httpClient.GetStringAsync(urlPath);
+                    dynamic statusData = JsonConvert.DeserializeObject(json);
+                    string indicator = statusData.status.indicator;
+                    return indicator == "none";
+                }
+
+                catch (HttpRequestException ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    Console.WriteLine($"Error fetching JSON: {ex.Message}");
+                }
+            }
+
+            return false;
+        }
+
+        private async Task<bool> IsInternetAvailable()
+        {
+            try
+            {
+                using (var ping = new System.Net.NetworkInformation.Ping())
+                {
+                    var reply = ping.Send("8.8.8.8", 3000);
+                    if (reply.Status == System.Net.NetworkInformation.IPStatus.Success)
+                    {
+                        return true;
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                MessageBox.Show($"Error: {ex.Message}");
+            }
+
+            return false;
+        }
+
+        public void UpdateTrafficLight(string color)
+        {
+            // Use the Dispatcher to update the UI on the UI thread
+            Dispatcher.Invoke(() =>
+            {
+                // First, set all lights to "off"
+                RedLight.Fill = redOff;
+                YellowLight.Fill = yellowOff;
+                GreenLight.Fill = greenOff;
+
+                // Then, based on the input, turn the appropriate light "on"
+                switch (color.ToLower())
+                {
+                    case "red":
+                        RedLight.Fill = redOn;
+                        break;
+                    case "yellow":
+                        YellowLight.Fill = yellowOn;
+                        break;
+                    case "green":
+                        GreenLight.Fill = greenOn;
+                        break;
+                }
+            });
+        }
+
     }
 }
