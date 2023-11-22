@@ -17,4 +17,9 @@ Install Steps:
 If this helps you in any way please donate if possible.  I would like to create more programs like this and improve this one.
 
 Or you can download current version from the build artifact [AssistantArtifact] <= Incomplete for now.
+Api Status Lights:
+Red - Api is down.
+Yellow - Internet is down\Unable to access internet.
+Green - Api is up.
+
 ![image](https://github.com/bsoverns/AssistantAi/assets/12473875/f1f20804-c696-4dbc-8362-bdc0354273cc)
