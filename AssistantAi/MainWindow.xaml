@@ -114,7 +114,8 @@
                             <StatusBarItem>
                                 <ProgressBar Name="ListeningModeProgressBar" Width="175" Height="20" Minimum="0" Maximum="100"/>
                             </StatusBarItem>
-                        </StatusBar>                        
+                        </StatusBar>
+                        <CheckBox Name="ckbxCreateImage" Content="Create Image" Grid.Column="8" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxCreateImage_Checked" Unchecked="ckbxCreateImage_Unchecked"/>
                     </Grid>
 
                     <!-- Fourth set of controls -->
