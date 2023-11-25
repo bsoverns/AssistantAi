@@ -467,7 +467,7 @@ namespace AssistantAi
                         sResponse = (string)oChoice["text"];
                     }
 
-                    return sResponse;
+                    return sResponse.Trim();
                 }
 
                 catch (HttpRequestException ex)
@@ -577,7 +577,7 @@ namespace AssistantAi
                     var oMessage = (JObject)oChoice["message"];
                     sResponse = (string)oMessage["content"];
 
-                    return sResponse;
+                    return sResponse.Trim();
                 }
 
                 catch (Exception ex)
@@ -739,6 +739,7 @@ namespace AssistantAi
             }
         }
 
+        //Incomplete
         private static double CalculatePrice(int tokens, string modelName)
         {
             
@@ -882,6 +883,8 @@ namespace AssistantAi
 
         private async Task AssistantResponseWindow(string typeResponse, string response)
         {
+            response = response.Trim();
+
             try
             {
                 //This is incomplete
@@ -903,6 +906,7 @@ namespace AssistantAi
                     string afterCode = response.Substring(lastIndex + 3);
                     AppendTextToRichTextBox(afterCode);
                 }
+
                 else
                 {
                     // It's not code, append it as plain text
@@ -911,6 +915,7 @@ namespace AssistantAi
 
                 txtAssistantResponse.ScrollToEnd();
             }
+
             catch (Exception ex)
             {
                 LogWriter errorLog = new LogWriter();
@@ -930,8 +935,8 @@ namespace AssistantAi
                 System.Windows.Controls.Image imageControl = new System.Windows.Controls.Image
                 {
                     Source = bitmap,
-                    Width = 200, // Set the width you want
-                    Height = 150, // Set the height you want
+                    Width = 400, // Set the width you want
+                    Height = 400, // Set the height you want
                     Stretch = Stretch.Uniform
                 };
 
@@ -944,6 +949,7 @@ namespace AssistantAi
 
                 txtAssistantResponse.ScrollToEnd();
             }
+
             catch (Exception ex)
             {
                 LogWriter errorLog = new LogWriter();
@@ -953,18 +959,19 @@ namespace AssistantAi
             }
         }
 
-
         //This is incomplete
         private void AppendTextToRichTextBox(string text, bool isCodeBlock = false)
         {
             Paragraph paragraph = new Paragraph();
+
             if (isCodeBlock)
             {
-                paragraph.FontFamily = new System.Windows.Media.FontFamily("Consolas");
+                paragraph.FontFamily = new System.Windows.Media.FontFamily("Courier");
                 paragraph.Background = System.Windows.Media.Brushes.LightGray;
                 paragraph.Padding = new Thickness(5);
                 HighlightCode(paragraph, text);
             }
+
             else
             {
                 paragraph.Inlines.Add(new Run(text));
