@@ -63,8 +63,8 @@ namespace AssistantAi
         public async Task<bool> SaveApiKey(string openAiKey)
         {
             string apiKeyPathway = programLocation; // Adjust the path as necessary
-            var config = new OpenAiWorkBench.OpenAiConfig { OpenAiKey = openAiKey };
-            var workBench = new OpenAiWorkBench();
+            var config = new OpenAiConfiguration.OpenAiData { OpenAiKey = openAiKey };
+            var workBench = new OpenAiConfiguration();
 
             return await workBench.SaveToFileAsync(apiKeyPathway, config);
         }

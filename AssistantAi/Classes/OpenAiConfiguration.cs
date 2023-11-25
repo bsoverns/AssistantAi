@@ -5,21 +5,20 @@ using System.Threading.Tasks;
 
 namespace AssistantAi.Classes
 {
-    //This is just the class to load, save, and hold the API key
-    internal class OpenAiWorkBench
+    internal class OpenAiConfiguration
     {
-        public class OpenAiConfig
+        public class OpenAiData
         {
             [JsonProperty("OpenAiKey")]
             public string OpenAiKey { get; set; }
         }
 
-        public async Task<(bool, OpenAiConfig)> LoadFromFileAsync(string filePath)
+        public async Task<(bool, OpenAiData)> LoadFromFileAsync(string filePath)
         {
             try
             {
                 string json = await File.ReadAllTextAsync(filePath);
-                var config = JsonConvert.DeserializeObject<OpenAiConfig>(json);
+                var config = JsonConvert.DeserializeObject<OpenAiData>(json);
                 return (true, config); 
             }
             catch (Exception ex)
@@ -29,7 +28,7 @@ namespace AssistantAi.Classes
             }
         }
 
-        public async Task<bool> SaveToFileAsync(string filePath, OpenAiConfig config)
+        public async Task<bool> SaveToFileAsync(string filePath, OpenAiData config)
         {
             try
             {

@@ -112,9 +112,11 @@ namespace AssistantAi
             speechDirectory,
             speechRecordingPath,
             currentPlayingFilePath,
-            imageDirectory,
-            imageSavePath,
+            imageDirectory,            
+            imageSavePath,            
             currentImageFilePath,
+            imageCreationDirectory,
+            currentImageCreationFilePath,
             errorLogDirectory;
 
         public MainWindow()
@@ -141,9 +143,10 @@ namespace AssistantAi
             else
             {
                 SpinnerStatus.Visibility = Visibility.Visible;
-                //Text question
                 await SendMessage();
                 SpinnerStatus.Visibility = Visibility.Collapsed;
+
+                #region TestCode
 
                 /* All test code below; do not remove
                 //Whisper Speech return test
@@ -164,12 +167,20 @@ namespace AssistantAi
                 //Directory.CreateDirectory(recordingsDirectory);
                 //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "German.m4a");
                 //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Telugu.m4a");
-                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Polish.m4a");
+                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Polish.m4a");   
+
+                //Image Creations
+                //Directory.CreateDirectory(imageCreationDirectory);
+                //string fileName = $"DALLE_{DateTime.Now:yyyyMMddHHmmss}.png";
+                //currentImageCreationFilePath = System.IO.Path.Combine(imageCreationDirectory, fileName);
+                //GenerateImageAsync(txtQuestion.Text, currentImageCreationFilePath);
 
                 //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"transcriptions");
                 //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"translations");
                 //txtAssistantResponse.Text = response;  
                 */
+
+                #endregion TestCode
             }
 
             AssistantControls.IsEnabled = true;
@@ -266,6 +277,7 @@ namespace AssistantAi
         private async Task SendMessage()
         {
             string sQuestion = txtQuestion.Text;
+
             if (string.IsNullOrEmpty(sQuestion))
             {
                 MessageBox.Show("Type in your question!");
@@ -282,7 +294,34 @@ namespace AssistantAi
             await AssistantResponseWindow("Me: ", sQuestion);
             txtQuestion.Text = "";
 
-            if (ckbxMute.IsChecked == true)
+            if (ckbxCreateImage.IsChecked == true)
+            {
+                try
+                {
+                    SpinnerStatus.Visibility = Visibility.Visible;
+                    //Image Creations
+                    Directory.CreateDirectory(imageCreationDirectory);
+                    string fileName = $"DALLE_{DateTime.Now:yyyyMMddHHmmss}.png";
+                    currentImageCreationFilePath = System.IO.Path.Combine(imageCreationDirectory, fileName);
+                    await GenerateImageAsync(sQuestion, currentImageCreationFilePath);
+                    await AssistantResponseWindow("DALL-e: ", @"Below is an image located under: " + currentImageCreationFilePath.ToString() + "\r\n");
+                    await AssistantResponseWindowImageAdd(currentImageCreationFilePath);
+                }
+
+                catch (Exception ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    txtAssistantResponse.AppendText("Error: " + ex.Message);
+                }
+
+                finally
+                {
+                    SpinnerStatus.Visibility = Visibility.Collapsed;
+                }
+            }
+
+            else if (ckbxMute.IsChecked == true)
             {
                 if (File.Exists(currentImageFilePath))
                 {
@@ -349,7 +388,7 @@ namespace AssistantAi
                     //string sAnswer = SendMsg(sQuestion) + "";
                     string sAnswer = await SendMsgAsync(sQuestion) + "";
                     await AssistantResponseWindow("Chat GPT: ", sAnswer);
-                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudioVoice.SelectedItem.ToString());               
+                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudioVoice.SelectedItem.ToString());
                 }
 
                 catch (Exception ex)
@@ -643,7 +682,63 @@ namespace AssistantAi
                 MessageBox.Show($"Delete File Exception: {ex.Message}");
             }
         }
-        
+
+        public async Task GenerateImageAsync(string prompt, string outputFilePath)
+        {
+            string sUrl = "https://api.openai.com/v1/images/generations";
+
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
+
+                var payload = new
+                {
+                    model = "dall-e-3",
+                    prompt = prompt,
+                    n = 1,
+                    size = "1024x1024"
+                };
+
+                var jsonPayload = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                try
+                {
+                    var response = await httpClient.PostAsync(sUrl, content);
+                    response.EnsureSuccessStatusCode();
+
+                    var responseContent = await response.Content.ReadAsStringAsync();
+                    var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, object>>(responseContent);
+                    var data = jsonResponse["data"] as JArray;
+                    var firstImage = data[0] as JObject;
+                    var imageUrl = firstImage["url"].ToString();
+
+                    // Download the image from the URL
+                    using (var imageClient = new HttpClient())
+                    {
+                        var imageResponse = await imageClient.GetAsync(imageUrl);
+                        imageResponse.EnsureSuccessStatusCode();
+
+                        using (var imageStream = await imageResponse.Content.ReadAsStreamAsync())
+                        {
+                            // Save the image to a file
+                            using (var fileStream = new FileStream(outputFilePath, FileMode.Create))
+                            {
+                                await imageStream.CopyToAsync(fileStream);
+                            }
+                        }
+                    }
+                }
+
+                catch (HttpRequestException ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, prompt + ":\r\n " + ex.ToString());
+                    Console.WriteLine($"Request exception: {ex.Message}");
+                }
+            }
+        }
+
         private static double CalculatePrice(int tokens, string modelName)
         {
             
@@ -679,6 +774,7 @@ namespace AssistantAi
             recordingsDirectory = System.IO.Path.Combine(programLocation, @"Files\Sound recordings", "Recordings");
             speechDirectory = System.IO.Path.Combine(programLocation, @"Files\Sound recordings", "Speech");
             imageDirectory = System.IO.Path.Combine(programLocation, @"Files\Images", "Captures");
+            imageCreationDirectory = System.IO.Path.Combine(programLocation, @"Files\Images", "Creations");
             errorLogDirectory = System.IO.Path.Combine(programLocation, @"Files\ErrorLogs");
             txtAssistantResponse.Document.Blocks.Clear();
 
@@ -744,7 +840,7 @@ namespace AssistantAi
         public async Task LoadApiKey()
         {
             string apiKeyPathway = System.IO.Path.Combine(programLocation, @"Files\ApiKey.json");
-            var workBench = new AssistantAi.Classes.OpenAiWorkBench();
+            var workBench = new AssistantAi.Classes.OpenAiConfiguration();
 
             // Destructure the tuple into two variables: isLoaded and config
             var (isLoaded, config) = await workBench.LoadFromFileAsync(apiKeyPathway);
@@ -823,6 +919,40 @@ namespace AssistantAi
                 txtAssistantResponse.ScrollToEnd();
             }
         }
+
+        //This is messy but it works, needs refined
+        private async Task AssistantResponseWindowImageAdd(string fileLocation)
+        {
+            try
+            {
+                // Load the image from the file and create an Image control
+                BitmapImage bitmap = new BitmapImage(new Uri(fileLocation, UriKind.Absolute));
+                System.Windows.Controls.Image imageControl = new System.Windows.Controls.Image
+                {
+                    Source = bitmap,
+                    Width = 200, // Set the width you want
+                    Height = 150, // Set the height you want
+                    Stretch = Stretch.Uniform
+                };
+
+                // Create a new InlineUIContainer to host the Image, and add it to the existing document
+                InlineUIContainer container = new InlineUIContainer(imageControl);
+                Paragraph paragraph = new Paragraph(container);
+
+                // Append the new paragraph to the existing FlowDocument
+                txtAssistantResponse.Document.Blocks.Add(paragraph);
+
+                txtAssistantResponse.ScrollToEnd();
+            }
+            catch (Exception ex)
+            {
+                LogWriter errorLog = new LogWriter();
+                errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                AppendTextToRichTextBox("Error: " + ex.Message); // Make sure this method correctly appends text
+                txtAssistantResponse.ScrollToEnd();
+            }
+        }
+
 
         //This is incomplete
         private void AppendTextToRichTextBox(string text, bool isCodeBlock = false)
@@ -919,6 +1049,7 @@ namespace AssistantAi
             cmbAudioVoice.IsEnabled = false;
             cmbModel.IsEnabled = false;
             ckbxMute.IsEnabled = false;
+            ckbxCreateImage.IsChecked = false;
             countdownValue = 30; // reset countdown
             ListeningModeProgressBar.Value = countdownValue; // reset progress bar
             StartAudioRecording();            
@@ -1006,6 +1137,24 @@ namespace AssistantAi
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 MessageBox.Show($"An error occurred while starting recording: {ex.Message}");
             }
+        }
+
+        private void ckbxCreateImage_Checked(object sender, RoutedEventArgs e)
+        {
+            if (ckbxMute.IsChecked == false || ckbxListeningMode.IsChecked == true)
+            {
+                ckbxMute.IsChecked = true;
+                ckbxListeningMode.IsChecked = false;
+            }
+
+            ckbxMute.IsEnabled = false;
+            ckbxListeningMode.IsEnabled = false;
+        }
+
+        private void ckbxCreateImage_Unchecked(object sender, RoutedEventArgs e)
+        {
+            ckbxMute.IsEnabled = true;
+            ckbxListeningMode.IsEnabled = true;
         }
 
         private void StopAudioRecording()
@@ -1224,6 +1373,5 @@ namespace AssistantAi
                 }
             });
         }
-
     }
 }
