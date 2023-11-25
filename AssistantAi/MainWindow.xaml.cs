@@ -143,20 +143,7 @@ namespace AssistantAi
             else
             {
                 SpinnerStatus.Visibility = Visibility.Visible;
-                if (ckbxCreateImage.IsChecked == true)
-                {
-                    //Image Creations
-                    Directory.CreateDirectory(imageCreationDirectory);
-                    string fileName = $"DALLE_{DateTime.Now:yyyyMMddHHmmss}.png";
-                    currentImageCreationFilePath = System.IO.Path.Combine(imageCreationDirectory, fileName);
-                    await GenerateImageAsync(txtQuestion.Text, currentImageCreationFilePath);
-                    await AssistantResponseWindow("DALL-e: ", @"Below is an image located under: " + currentImageCreationFilePath.ToString() + "\r\n");
-                    await AssistantResponseWindowImageAdd(currentImageCreationFilePath);
-                }
-
-                else
-                    await SendMessage();
-
+                await SendMessage();
                 SpinnerStatus.Visibility = Visibility.Collapsed;
 
                 #region TestCode
@@ -316,7 +303,7 @@ namespace AssistantAi
                     Directory.CreateDirectory(imageCreationDirectory);
                     string fileName = $"DALLE_{DateTime.Now:yyyyMMddHHmmss}.png";
                     currentImageCreationFilePath = System.IO.Path.Combine(imageCreationDirectory, fileName);
-                    await GenerateImageAsync(txtQuestion.Text, currentImageCreationFilePath);
+                    await GenerateImageAsync(sQuestion, currentImageCreationFilePath);
                     await AssistantResponseWindow("DALL-e: ", @"Below is an image located under: " + currentImageCreationFilePath.ToString() + "\r\n");
                     await AssistantResponseWindowImageAdd(currentImageCreationFilePath);
                 }
@@ -752,7 +739,6 @@ namespace AssistantAi
             }
         }
 
-
         private static double CalculatePrice(int tokens, string modelName)
         {
             
@@ -939,23 +925,22 @@ namespace AssistantAi
         {
             try
             {
-                FlowDocument doc = new FlowDocument();
+                // Load the image from the file and create an Image control
+                BitmapImage bitmap = new BitmapImage(new Uri(fileLocation, UriKind.Absolute));
+                System.Windows.Controls.Image imageControl = new System.Windows.Controls.Image
+                {
+                    Source = bitmap,
+                    Width = 200, // Set the width you want
+                    Height = 150, // Set the height you want
+                    Stretch = Stretch.Uniform
+                };
 
-                System.Windows.Controls.Image image = new System.Windows.Controls.Image();
-                image.Source = new BitmapImage(new Uri(fileLocation, UriKind.Relative));
-                                
-                image.Width = 200;
-                image.Height = 150;
-                image.Stretch = Stretch.Uniform; 
+                // Create a new InlineUIContainer to host the Image, and add it to the existing document
+                InlineUIContainer container = new InlineUIContainer(imageControl);
+                Paragraph paragraph = new Paragraph(container);
 
-                InlineUIContainer container = new InlineUIContainer(image);
-
-                Paragraph paragraph = new Paragraph();
-                paragraph.Inlines.Add(container);
-
-                doc.Blocks.Add(paragraph);
-
-                txtAssistantResponse.Document = doc;
+                // Append the new paragraph to the existing FlowDocument
+                txtAssistantResponse.Document.Blocks.Add(paragraph);
 
                 txtAssistantResponse.ScrollToEnd();
             }
@@ -963,10 +948,11 @@ namespace AssistantAi
             {
                 LogWriter errorLog = new LogWriter();
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                AppendTextToRichTextBox("Error: " + ex.Message);
+                AppendTextToRichTextBox("Error: " + ex.Message); // Make sure this method correctly appends text
                 txtAssistantResponse.ScrollToEnd();
             }
         }
+
 
         //This is incomplete
         private void AppendTextToRichTextBox(string text, bool isCodeBlock = false)
