@@ -59,7 +59,7 @@
                         </Grid.ColumnDefinitions>
 
                         <Button Name="btnSend" Content="Send" Grid.Column="0" Click="OnSendButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
-                        <Label Content="ChatGpt Model" Grid.Column="1" Margin="8,8,0,0" HorizontalAlignment="Right"/>
+                        <Label Content="Chat Model" Grid.Column="1" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <ComboBox Name="cmbModel" Grid.Column="2" Grid.ColumnSpan="2" Margin="8,8,0,0" SelectionChanged="cmbModel_SelectionChanged"/>
                         <local:Spinner x:Name="SpinnerStatus" HorizontalAlignment="Left" VerticalAlignment="Bottom" Grid.Column="4" Height="24" Width="24" Margin="8,8,0,0" Visibility="Collapsed"/>
                         <Label Content="Voice Model" Grid.Column="5" Margin="8,8,0,0" HorizontalAlignment="Right"/>
