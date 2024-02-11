@@ -2,7 +2,7 @@
   "version": 3,
   "targets": {
     "net7.0-windows7.0": {
-      "HtmlAgilityPack/1.11.54": {
+      "HtmlAgilityPack/1.11.58": {
         "type": "package",
         "compile": {
           "lib/netstandard2.0/HtmlAgilityPack.dll": {
@@ -232,14 +232,14 @@
     }
   },
   "libraries": {
-    "HtmlAgilityPack/1.11.54": {
-      "sha512": "bgB79N4urc4D7hrD4R+Qk6CjPiYOfs6vfXNsmw3nCcfQEQvBQGjfAcl5k/tB1ZP1hA0d7xXs0jK8xAXV36IVUg==",
+    "HtmlAgilityPack/1.11.58": {
+      "sha512": "/LzjIKoAWdyXOn6o+zJTN2qpNIwfaDWbSQ974pVRwnzHsUFohIOSILdtkPrSO6YC38MNj4nDbpr1RkVBDE1RWQ==",
       "type": "package",
-      "path": "htmlagilitypack/1.11.54",
+      "path": "htmlagilitypack/1.11.58",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "htmlagilitypack.1.11.54.nupkg.sha512",
+        "htmlagilitypack.1.11.58.nupkg.sha512",
         "htmlagilitypack.nuspec",
         "lib/Net35/HtmlAgilityPack.dll",
         "lib/Net35/HtmlAgilityPack.pdb",
@@ -587,7 +587,7 @@
   },
   "projectFileDependencyGroups": {
     "net7.0-windows7.0": [
-      "HtmlAgilityPack >= 1.11.54",
+      "HtmlAgilityPack >= 1.11.58",
       "NAudio >= 2.2.1",
       "Newtonsoft.Json >= 13.0.3"
     ]
@@ -639,7 +639,7 @@
         "dependencies": {
           "HtmlAgilityPack": {
             "target": "Package",
-            "version": "[1.11.54, )"
+            "version": "[1.11.58, )"
           },
           "NAudio": {
             "target": "Package",
@@ -669,7 +669,7 @@
             "privateAssets": "none"
           }
         },
-        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\7.0.403\\RuntimeIdentifierGraph.json"
+        "runtimeIdentifierGraphPath": "C:\\Program Files\\dotnet\\sdk\\8.0.101\\RuntimeIdentifierGraph.json"
       }
     }
   }

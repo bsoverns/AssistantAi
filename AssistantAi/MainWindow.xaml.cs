@@ -37,12 +37,13 @@ namespace AssistantAi
 {
     #region COSTS
 
-    /* Notes on prices 11/09/2023
+    /* Notes on prices 02/10/2024
     https://openai.com/pricing#language-models
     "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k" 
 
     GPT-4 Turbo
-    Model Input Output
+    Model	Input	Output
+    gpt-4-0125-preview	$0.01 / 1K tokens	$0.03 / 1K tokens
     gpt-4-1106-preview	$0.01 / 1K tokens	$0.03 / 1K tokens
     gpt-4-1106-vision-preview	$0.01 / 1K tokens	$0.03 / 1K tokens
 
@@ -52,14 +53,32 @@ namespace AssistantAi
     gpt-4-32k	$0.06 / 1K tokens	$0.12 / 1K tokens
 
     GPT-3.5 Turbo
-    gpt-3.5-turbo-1106	$0.0010 / 1K tokens	$0.0020 / 1K tokens
+    Model	Input	Output
+    gpt-3.5-turbo-0125	$0.0005 / 1K tokens	$0.0015 / 1K tokens
     gpt-3.5-turbo-instruct	$0.0015 / 1K tokens	$0.0020 / 1K tokens
 
-    Assistants API
+    Assistants API => Not used yet
     Tool	Input
-    Code interpreter	$0.03 / session (free until 11/17/2023)
-    Retrieval	$0.20 / GB / assistant / day (free until 11/17/2023)
+    Code interpreter	$0.03 / session
+    Retrieval	$0.20 / GB / assistant / day (free until 03/01/2024)
 
+    Fine-tuning models => Not used
+    Model	Training	Input usage	Output usage
+    gpt-3.5-turbo	$0.0080 / 1K tokens	$0.0030 / 1K tokens	$0.0060 / 1K tokens
+    davinci-002	$0.0060 / 1K tokens	$0.0120 / 1K tokens	$0.0120 / 1K tokens
+    babbage-002	$0.0004 / 1K tokens	$0.0016 / 1K tokens	$0.0016 / 1K tokens
+
+    Embedding models => Not used
+    Model	Usage
+    text-embedding-3-small	$0.00002 / 1K tokens
+    text-embedding-3-large	$0.00013 / 1K tokens
+    ada v2	$0.00010 / 1K tokens
+
+    Base models => Not used
+    Model	Usage
+    davinci-002	$0.0020 / 1K tokens
+    babbage-002	$0.0004 / 1K tokens
+    
     Image models
     Model	Quality	Resolution	Price
     DALL·E 3	Standard	1024×1024	$0.040 / image
@@ -75,6 +94,13 @@ namespace AssistantAi
     Whisper	$0.006 / minute (rounded to the nearest second)
     TTS	$0.015 / 1K characters
     TTS HD	$0.030 / 1K characters
+
+    Older models
+    Model	Input	Output
+    gpt-3.5-turbo-1106	$0.0010 / 1K tokens	$0.0020 / 1K tokens
+    gpt-3.5-turbo-0613	$0.0015 / 1K tokens	$0.0020 / 1K tokens
+    gpt-3.5-turbo-16k-0613	$0.0030 / 1K tokens	$0.0040 / 1K tokens
+    gpt-3.5-turbo-0301	$0.0015 / 1K tokens	$0.0020 / 1K tokens
     */
 
     #endregion COSTS
@@ -978,7 +1004,7 @@ namespace AssistantAi
             }
 
             txtAssistantResponse.Document.Blocks.Add(paragraph);
-        }        
+        }
 
         //This is incomplete
         private void HighlightCode(Paragraph paragraph, string code)
@@ -1029,17 +1055,17 @@ namespace AssistantAi
                     {
                         run.Foreground = keywordColor;
                     }
-                    
+
                     else if (token.StartsWith("//"))
                     {
                         run.Foreground = commentColor;
                     }
-                    
+
                     else if (token.StartsWith("\"") && token.EndsWith("\""))
                     {
                         run.Foreground = stringColor;
                     }
-                    
+
                     span.Inlines.Add(run);
                 }
 
