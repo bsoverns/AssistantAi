@@ -1,6 +1,6 @@
 # AssistantAi
 
-AssistantAi is a WPF application designed for interactive communication with OpenAI's various endpoints. The application is currently under development, continually evolving with new features and enhancements.
+AssistantAi is a WPF application designed for interactive communication with OpenAI's various endpoints. The application is currently under continuous development, evolving to test the new features and enhancements of the API.
 
 ## Features
 
