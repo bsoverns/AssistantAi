@@ -4,34 +4,25 @@ using System.Drawing;
 using System.Globalization;
 using System.IO;
 using System.Linq;
-using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Reflection;
-using System.Security.Authentication;
 using System.Text;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
-using System.Windows.Data;
 using System.Windows.Documents;
-using System.Windows.Input;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using System.Web;
-using System.Windows.Media.Media3D;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using YourNamespace;
-using System.Configuration;
 using System.Windows.Threading;
 using System.Drawing.Imaging;
 using AssistantAi.Class;
-using AssistantAi.Classes;
-using HtmlAgilityPack;
 using System.Timers;
+using System.Windows.Forms;
+using System.Text.RegularExpressions;
 
 namespace AssistantAi
 {
@@ -119,6 +110,20 @@ namespace AssistantAi
         public int countdownValue = 30;
         int tokenCount = 0;
         double estimatedCost = 0;
+        string instructionalText = @"Please answer the questions attached on this page, supply the answer in the following JSON format:
+
+[
+	{
+		""QuestionNumber_1"": {
+			""Question"": ""A student is researching a popular culture in the United States"",
+			""Correct Answer"": {
+				""Answer Letter"": ""A"",
+				""Answer Description"": ""The city the book was published"",
+				""Deep dive from ChatGpt"": ""The reason this answer is correct is because the US has popular culture and based on all of the answers this one fits the best.""
+			}
+		}
+	}
+]";
 
         private readonly SolidColorBrush redOn = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 0, 0));
         private readonly SolidColorBrush redOff = new SolidColorBrush(System.Windows.Media.Color.FromRgb(128, 0, 0)); 
@@ -143,7 +148,8 @@ namespace AssistantAi
             currentImageFilePath,
             imageCreationDirectory,
             currentImageCreationFilePath,
-            errorLogDirectory;
+            errorLogDirectory,
+            homeworkAnswerDirectory;
 
         public MainWindow()
         {
@@ -164,7 +170,7 @@ namespace AssistantAi
             btnSend.IsEnabled = false;
             btnClear.IsEnabled = false;
             if (!CostCheck())
-                MessageBox.Show("Either the token or the cost threshold is too high for your default settings.\r\n\r\nEither adjust your token/cost threshold, rephrase your question, or change your model.");
+                System.Windows.MessageBox.Show("Either the token or the cost threshold is too high for your default settings.\r\n\r\nEither adjust your token/cost threshold, rephrase your question, or change your model.");
 
             else
             {
@@ -263,7 +269,7 @@ namespace AssistantAi
             {
                 LogWriter errorLog = new LogWriter();
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                MessageBox.Show($"Error: {ex.Message}");                
+                System.Windows.MessageBox.Show($"Error: {ex.Message}");                
             }
 
             finally
@@ -306,7 +312,7 @@ namespace AssistantAi
 
             if (string.IsNullOrEmpty(sQuestion))
             {
-                MessageBox.Show("Type in your question!");
+                System.Windows.MessageBox.Show("Type in your question!");
                 txtQuestion.Focus();
                 return;
             }
@@ -347,6 +353,34 @@ namespace AssistantAi
                 }
             }
 
+            else if (ckbxHomeworkMode.IsChecked == true)
+            {
+                if (lblPickupFolder.Content.ToString() == "")
+                {
+                    System.Windows.MessageBox.Show("Please select a folder to pick up homework images.");
+                    return;
+                }
+
+                try
+                {
+                    SpinnerStatus.Visibility = Visibility.Visible;
+                    //Image Creations
+                    await SendHomeworkAsync(ckbxHomeworkMode.Content.ToString(), lblPickupFolder.Content.ToString());
+                }
+
+                catch (Exception ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    txtAssistantResponse.AppendText("Error: " + ex.Message);
+                }
+
+                finally
+                {
+                    SpinnerStatus.Visibility = Visibility.Collapsed;
+                }
+            }
+
             else if (ckbxMute.IsChecked == true)
             {
                 if (File.Exists(currentImageFilePath))
@@ -355,7 +389,7 @@ namespace AssistantAi
                     {
                         SpinnerStatus.Visibility = Visibility.Visible;
                         string base64Image = EncodeImageToBase64(currentImageFilePath); // Provide the correct path
-                        string sAnswer = await SendImageMsgAsync(sQuestion, base64Image);
+                        string sAnswer = await SendImageMsgAsync(sQuestion, "jpeg", base64Image);
                         await AssistantResponseWindow("Chat GPT: ", sAnswer);
                     }
 
@@ -551,11 +585,11 @@ namespace AssistantAi
             }
         }
 
-        public async Task<string> SendImageMsgAsync(string sQuestion, string base64Image = null)
+        public async Task<string> SendImageMsgAsync(string sQuestion, string imageType, string base64Image = null)
         {
             if (base64Image == null)
             {
-                MessageBox.Show("No image provided.");
+                System.Windows.MessageBox.Show("No image provided.");
                 return "";
             }
 
@@ -577,7 +611,8 @@ namespace AssistantAi
                             content = new object[]
                             {
                                 new { type = "text", text = sQuestion },
-                                new { type = "image_url", image_url = new { url = $"data:image/jpeg;base64,{base64Image}" } }
+                                //new { type = "image_url", image_url = new { url = $"data:image/jpeg;base64,{base64Image}" } }
+                                new { type = "image_url", image_url = new { url = $"data:image/{imageType};base64,{base64Image}" } }
                             }
                         }
                     },
@@ -610,9 +645,44 @@ namespace AssistantAi
                 {
                     LogWriter errorLog = new LogWriter();
                     errorLog.WriteLog(errorLogDirectory, sQuestion + ":\r\n " + ex.ToString());
-                    MessageBox.Show($"Error sending image to OpenAI: {ex.Message}");
+                    System.Windows.MessageBox.Show($"Error sending image to OpenAI: {ex.Message}");
                     return "";
                 }
+            }
+        }
+
+        //Create a method to pad with two variables, sQuestion and fileLocation.  This will sweep each png file in the directory.
+        //The method will then send the question and image to OpenAI and return the response.
+        //The response will be added to the txtAssistantResponse RichTextBox.   
+        public async Task SendHomeworkAsync(string sQuestion, string fileLocation)
+        {
+            if (Directory.Exists(fileLocation))
+            {                
+                //Update the foreach to loop on filename order
+                //foreach(string file in Directory.EnumerateFiles(fileLocation, "*.png").OrderBy(f => f))
+                //{
+                //    string base64Image = EncodeImageToBase64(file);
+                //    string response = await SendImageMsgAsync(sQuestion, "png", base64Image);
+                //    await AssistantResponseWindow("Chat GPT: ", response);
+                //    await Task.Delay(5000);
+                //}
+
+                var sortedFiles = Directory.EnumerateFiles(fileLocation, "*.png")
+                    .Select(f => new FileInfo(f))
+                    .OrderBy(fi => Regex.Match(fi.Name, @"\d+").Value.PadLeft(10, '0')) // Pad numbers to ensure correct numeric sorting
+                    .ThenBy(fi => fi.Name) // Fallback to alphabetical sort for files with the same number
+                    .Select(fi => fi.FullName);
+
+                foreach (string file in sortedFiles)
+                {
+                    string base64Image = EncodeImageToBase64(file);
+                    string response = await SendImageMsgAsync(sQuestion, "png", base64Image);
+                    await AssistantResponseWindow("Chat GPT: ", response);
+                    await Task.Delay(5000);
+                }                
+                
+                ckbxHomeworkMode.IsChecked = false;                
+                lblPickupFolder.Content = "";
             }
         }
 
@@ -628,7 +698,7 @@ namespace AssistantAi
             {
                 LogWriter errorLog = new LogWriter();
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                MessageBox.Show($"Playback Exception: {ex.Message}");
+                System.Windows.MessageBox.Show($"Playback Exception: {ex.Message}");
                 await DeleteFileAsync(filePath);
             }
         }
@@ -642,7 +712,7 @@ namespace AssistantAi
 
         private void MediaPlayer_MediaFailed(object sender, EventArgs e)
         {
-            MessageBox.Show(@"Error playback on file: " + currentPlayingFilePath.ToString());
+            System.Windows.MessageBox.Show(@"Error playback on file: " + currentPlayingFilePath.ToString());
         }
 
         public async Task<string> WhisperMsgAsync(string audioFilePath, string modelName, string modelType)
@@ -705,7 +775,7 @@ namespace AssistantAi
             {
                 LogWriter errorLog = new LogWriter();
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                MessageBox.Show($"Delete File Exception: {ex.Message}");
+                System.Windows.MessageBox.Show($"Delete File Exception: {ex.Message}");
             }
         }
 
@@ -839,8 +909,10 @@ namespace AssistantAi
             txtMaxTokens.Text = "2048";
             txtMaxDollars.Text = "0.50";
 
-            // Set mute checkbox
+            // Set mute, homeworkmode checkbox, and pickup folder disabled
             ckbxMute.IsChecked = true;
+            ckbxHomeworkMode.IsChecked = false;
+            btnPickupFolder.IsEnabled = false;
 
             // Select default items by value
             cmbModel.SelectedItem = defaultChatGptModel;
@@ -1087,6 +1159,7 @@ namespace AssistantAi
             ListeningModeProgressBar.Value = countdownValue; // reset progress bar
             StartAudioRecording();            
             countdownTimer.Start(); // start countdown
+            ckbxHomeworkMode.IsEnabled = false;
         }
 
         private async void ckbxListeningMode_Unchecked(object sender, RoutedEventArgs e)
@@ -1147,6 +1220,7 @@ namespace AssistantAi
             btnSend.IsEnabled = true;
             btnClear.IsEnabled = true;
             SpinnerStatus.Visibility = Visibility.Collapsed;
+            ckbxHomeworkMode.IsEnabled = true;
         }
 
         private void StartAudioRecording()
@@ -1168,7 +1242,7 @@ namespace AssistantAi
             {
                 LogWriter errorLog = new LogWriter();
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                MessageBox.Show($"An error occurred while starting recording: {ex.Message}");
+                System.Windows.MessageBox.Show($"An error occurred while starting recording: {ex.Message}");
             }
         }
 
@@ -1178,6 +1252,7 @@ namespace AssistantAi
             {
                 ckbxMute.IsChecked = true;
                 ckbxListeningMode.IsChecked = false;
+                ckbxHomeworkMode.IsEnabled = false;
             }
 
             ckbxMute.IsEnabled = false;
@@ -1188,6 +1263,50 @@ namespace AssistantAi
         {
             ckbxMute.IsEnabled = true;
             ckbxListeningMode.IsEnabled = true;
+            ckbxHomeworkMode.IsEnabled = true;
+        }
+
+        private void ckbxHomeworkMode_Checked(object sender, RoutedEventArgs e)
+        {
+            ckbxMute.IsEnabled = false;
+            ckbxListeningMode.IsEnabled = false;
+            ckbxCreateImage.IsEnabled = false;
+            btnPickupFolder.IsEnabled = true;
+            AddInstructionalText();
+        }
+
+        private void ckbxHomeworkMode_Unchecked(object sender, RoutedEventArgs e)
+        {
+            ckbxMute.IsEnabled = true;
+            ckbxListeningMode.IsEnabled = true;
+            ckbxCreateImage.IsEnabled = true;
+            btnPickupFolder.IsEnabled = false;
+            RemoveInstructionalText();
+        }
+  
+        private void AddInstructionalText()
+        {
+            string sText = instructionalText;
+            txtQuestion.AppendText(sText);
+        }
+
+        private void RemoveInstructionalText()
+        {
+            string sText = instructionalText;
+            txtQuestion.Text = txtQuestion.Text.Replace(sText, "");
+            //txtQuestion.Text = "";
+        }
+
+        private void btnPickupFolder_Click(object sender, RoutedEventArgs e)
+        {
+            System.Windows.Forms.FolderBrowserDialog folderBrowserDialog = new FolderBrowserDialog();
+            DialogResult result = folderBrowserDialog.ShowDialog();
+
+            if (result == System.Windows.Forms.DialogResult.OK)
+            {
+                string folderPath = folderBrowserDialog.SelectedPath;
+                lblPickupFolder.Content = folderPath;
+            }
         }
 
         private void StopAudioRecording()
@@ -1375,7 +1494,7 @@ namespace AssistantAi
             {
                 LogWriter errorLog = new LogWriter();
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                MessageBox.Show($"Error: {ex.Message}");
+                System.Windows.MessageBox.Show($"Error: {ex.Message}");
             }
 
             return false;

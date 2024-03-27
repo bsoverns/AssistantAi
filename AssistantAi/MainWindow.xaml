@@ -13,7 +13,7 @@
                 <!-- For Controls GroupBox -->
                 <RowDefinition Height="Auto"/>
                 <!-- For AI Output GroupBox to expand -->
-                <RowDefinition Height="*"/>                
+                <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
 
             <GroupBox Header="User - Input" Grid.Row="0" Visibility="Visible">
@@ -37,7 +37,8 @@
             <GroupBox Name="AssistantControls" Header="Controls" Grid.Row="1" Visibility="Visible">
                 <Grid>
                     <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>                        
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
@@ -84,7 +85,7 @@
 
                         <Button Name="btnClear" Content="Clear" Grid.Column="0" Click="OnClearButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
                         <Label Name="lblEstimatedTokens" Content="Estimated Tokens = 0" Grid.Column="1" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
-                        <Label Name="lblEstimatedCost" Content="Estimated Cost = $0.00" Grid.Column="3" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>                        
+                        <Label Name="lblEstimatedCost" Content="Estimated Cost = $0.00" Grid.Column="3" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Top"/>
                         <Label Content="Whisper Model" Grid.Column="5" Margin="8,8,0,0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
                         <ComboBox Name="cmbWhisperModel" Grid.Column="6" Grid.ColumnSpan="2"  Margin="8,8,0,0" SelectionChanged="cmbWhisperModel_SelectionChanged"/>
                         <CheckBox Name="ckbxListeningMode" Content="Translate/Transcribe Mode" Grid.Column="8" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxListeningMode_Checked" Unchecked="ckbxListeningMode_Unchecked"/>
@@ -153,6 +154,26 @@
                         <Button Name="btnResetImage" Content="Reset Image" Grid.Column="7" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left" IsEnabled="False" Click="btnResetImage_Click"/>
                         <Image Name="ImgPreviewImage" Grid.Column="8" Margin="8,8,0,0"/>
                     </Grid>
+
+                    <!-- Fifth set of controls -->
+                    <Grid Grid.Row="4">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                        </Grid.ColumnDefinitions>
+
+                        <CheckBox Name="ckbxHomeworkMode" Content="Homework Mode" Grid.Column="0" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxHomeworkMode_Checked" Unchecked="ckbxHomeworkMode_Unchecked"/>
+                        <Button Name="btnPickupFolder" Content="Pickup Folder" Grid.Column="2" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left" Click="btnPickupFolder_Click"/>
+                        <Label Name="lblPickupFolder" Grid.Column="3" Grid.ColumnSpan="7" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
+                    </Grid>
                 </Grid>
             </GroupBox>
 
@@ -165,7 +186,7 @@
                     </Grid.ColumnDefinitions>
                     <Grid.RowDefinitions>
                         <RowDefinition Height="*"/>
-                    </Grid.RowDefinitions> 
+                    </Grid.RowDefinitions>
 
                     <RichTextBox Name="txtAssistantResponse"
                              Grid.Column="0"
