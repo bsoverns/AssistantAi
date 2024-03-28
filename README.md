@@ -10,6 +10,7 @@ AssistantAi offers a versatile range of functionalities, including:
 2. Usage of Whisper for transcription, translation, and speech processing.
 3. Integration with OpenAI's Vision capabilities.
 4. Ability to generate images using OpenAI's DALL-E.
+5. Ability to use "Homework Mode" to select a folder of PNG images and ask questions about them.  Same question will be asked for each image in the directory.
 
 ## Installation Guide
 
