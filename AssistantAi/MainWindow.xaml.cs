@@ -364,8 +364,7 @@ namespace AssistantAi
                 try
                 {
                     SpinnerStatus.Visibility = Visibility.Visible;
-                    //Image Creations
-                    await SendHomeworkAsync(ckbxHomeworkMode.Content.ToString(), lblPickupFolder.Content.ToString());
+                    await SendHomeworkAsync(sQuestion, lblPickupFolder.Content.ToString());
                 }
 
                 catch (Exception ex)
@@ -651,22 +650,10 @@ namespace AssistantAi
             }
         }
 
-        //Create a method to pad with two variables, sQuestion and fileLocation.  This will sweep each png file in the directory.
-        //The method will then send the question and image to OpenAI and return the response.
-        //The response will be added to the txtAssistantResponse RichTextBox.   
         public async Task SendHomeworkAsync(string sQuestion, string fileLocation)
         {
             if (Directory.Exists(fileLocation))
-            {                
-                //Update the foreach to loop on filename order
-                //foreach(string file in Directory.EnumerateFiles(fileLocation, "*.png").OrderBy(f => f))
-                //{
-                //    string base64Image = EncodeImageToBase64(file);
-                //    string response = await SendImageMsgAsync(sQuestion, "png", base64Image);
-                //    await AssistantResponseWindow("Chat GPT: ", response);
-                //    await Task.Delay(5000);
-                //}
-
+            {      
                 var sortedFiles = Directory.EnumerateFiles(fileLocation, "*.png")
                     .Select(f => new FileInfo(f))
                     .OrderBy(fi => Regex.Match(fi.Name, @"\d+").Value.PadLeft(10, '0')) // Pad numbers to ensure correct numeric sorting
@@ -771,6 +758,7 @@ namespace AssistantAi
                     File.Delete(filePath);
                 }
             }
+
             catch (Exception ex)
             {
                 LogWriter errorLog = new LogWriter();
@@ -1294,7 +1282,6 @@ namespace AssistantAi
         {
             string sText = instructionalText;
             txtQuestion.Text = txtQuestion.Text.Replace(sText, "");
-            //txtQuestion.Text = "";
         }
 
         private void btnPickupFolder_Click(object sender, RoutedEventArgs e)
@@ -1380,14 +1367,9 @@ namespace AssistantAi
         }
 
         private static int CountTokens(string input)
-        {
-            // Average characters per token for English text
-            const int avgCharsPerToken = 4;
-
-            // Calculate the number of characters including spaces
+        {            
+            const int avgCharsPerToken = 4;            
             int characterCountIncludingSpaces = input.Length;
-
-            // Estimate the number of tokens based on the character count including spaces.
             int tokenCount = (int)Math.Ceiling((double)characterCountIncludingSpaces / avgCharsPerToken);
 
             return tokenCount;
@@ -1435,20 +1417,21 @@ namespace AssistantAi
         private async Task DownDetectorAsync()
         {
             bool isInternetAvailable = await IsInternetAvailable();
+            bool isApiActive = await CheckApiStatusAsync();
 
             if (!isInternetAvailable)
             {
                 UpdateTrafficLight("yellow");
             }
 
+            else if(!isApiActive)
+            {
+                UpdateTrafficLight("red");
+            }
+
             else
             {
-                bool isApiActive = await CheckApiStatusAsync();
-
-                if (isApiActive)
-                    UpdateTrafficLight("green");
-                else
-                    UpdateTrafficLight("red");
+                UpdateTrafficLight("green");
             }
         }
 
@@ -1463,7 +1446,9 @@ namespace AssistantAi
                     string json = await httpClient.GetStringAsync(urlPath);
                     dynamic statusData = JsonConvert.DeserializeObject(json);
                     string indicator = statusData.status.indicator;
-                    return indicator == "none";
+
+                    if (indicator == "none")
+                        return true;
                 }
 
                 catch (HttpRequestException ex)
@@ -1502,15 +1487,12 @@ namespace AssistantAi
 
         public void UpdateTrafficLight(string color)
         {
-            // Use the Dispatcher to update the UI on the UI thread
             Dispatcher.Invoke(() =>
             {
-                // First, set all lights to "off"
                 RedLight.Fill = redOff;
                 YellowLight.Fill = yellowOff;
                 GreenLight.Fill = greenOff;
 
-                // Then, based on the input, turn the appropriate light "on"
                 switch (color.ToLower())
                 {
                     case "red":
