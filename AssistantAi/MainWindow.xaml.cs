@@ -110,20 +110,7 @@ namespace AssistantAi
         public int countdownValue = 30;
         int tokenCount = 0;
         double estimatedCost = 0;
-        string instructionalText = @"Please answer the questions attached on this page, supply the answer in the following JSON format:
-
-[
-	{
-		""QuestionNumber_1"": {
-			""Question"": ""A student is researching a popular culture in the United States"",
-			""Correct Answer"": {
-				""Answer Letter"": ""A"",
-				""Answer Description"": ""The city the book was published"",
-				""Deep dive from ChatGpt"": ""The reason this answer is correct is because the US has popular culture and based on all of the answers this one fits the best.""
-			}
-		}
-	}
-]";
+        string instructionalText = @"You have selected to upload a list of images for an AI to review.  Please replace this text with your request.  This request will be the same for each image.  An example request is 'Attached is a review sheet that I completed.  Can you please review my answers for mistakes, and provide the correct answers if possible as well as a description for why that answer is correct";
 
         private readonly SolidColorBrush redOn = new SolidColorBrush(System.Windows.Media.Color.FromRgb(255, 0, 0));
         private readonly SolidColorBrush redOff = new SolidColorBrush(System.Windows.Media.Color.FromRgb(128, 0, 0)); 
@@ -149,7 +136,7 @@ namespace AssistantAi
             imageCreationDirectory,
             currentImageCreationFilePath,
             errorLogDirectory,
-            homeworkAnswerDirectory;
+            imageReviewDirectory;
 
         public MainWindow()
         {
@@ -353,19 +340,18 @@ namespace AssistantAi
                 }
             }
 
-            else if (ckbxHomeworkMode.IsChecked == true)
+            else if (ckbxImageReview.IsChecked == true)
             {
                 if (lblPickupFolder.Content.ToString() == "")
                 {
-                    System.Windows.MessageBox.Show("Please select a folder to pick up homework images.");
+                    System.Windows.MessageBox.Show("Please select a folder to pick up images.");
                     return;
                 }
 
                 try
                 {
                     SpinnerStatus.Visibility = Visibility.Visible;
-                    //Image Creations
-                    await SendHomeworkAsync(ckbxHomeworkMode.Content.ToString(), lblPickupFolder.Content.ToString());
+                    await SentQuestionWithImagesAsync(sQuestion, lblPickupFolder.Content.ToString());
                 }
 
                 catch (Exception ex)
@@ -651,22 +637,10 @@ namespace AssistantAi
             }
         }
 
-        //Create a method to pad with two variables, sQuestion and fileLocation.  This will sweep each png file in the directory.
-        //The method will then send the question and image to OpenAI and return the response.
-        //The response will be added to the txtAssistantResponse RichTextBox.   
-        public async Task SendHomeworkAsync(string sQuestion, string fileLocation)
+        public async Task SentQuestionWithImagesAsync(string sQuestion, string fileLocation)
         {
             if (Directory.Exists(fileLocation))
-            {                
-                //Update the foreach to loop on filename order
-                //foreach(string file in Directory.EnumerateFiles(fileLocation, "*.png").OrderBy(f => f))
-                //{
-                //    string base64Image = EncodeImageToBase64(file);
-                //    string response = await SendImageMsgAsync(sQuestion, "png", base64Image);
-                //    await AssistantResponseWindow("Chat GPT: ", response);
-                //    await Task.Delay(5000);
-                //}
-
+            {      
                 var sortedFiles = Directory.EnumerateFiles(fileLocation, "*.png")
                     .Select(f => new FileInfo(f))
                     .OrderBy(fi => Regex.Match(fi.Name, @"\d+").Value.PadLeft(10, '0')) // Pad numbers to ensure correct numeric sorting
@@ -681,7 +655,7 @@ namespace AssistantAi
                     await Task.Delay(5000);
                 }                
                 
-                ckbxHomeworkMode.IsChecked = false;                
+                ckbxImageReview.IsChecked = false;                
                 lblPickupFolder.Content = "";
             }
         }
@@ -771,6 +745,7 @@ namespace AssistantAi
                     File.Delete(filePath);
                 }
             }
+
             catch (Exception ex)
             {
                 LogWriter errorLog = new LogWriter();
@@ -909,9 +884,9 @@ namespace AssistantAi
             txtMaxTokens.Text = "2048";
             txtMaxDollars.Text = "0.50";
 
-            // Set mute, homeworkmode checkbox, and pickup folder disabled
+            // Set mute, ImageReview checkbox, and pickup folder disabled
             ckbxMute.IsChecked = true;
-            ckbxHomeworkMode.IsChecked = false;
+            ckbxImageReview.IsChecked = false;
             btnPickupFolder.IsEnabled = false;
 
             // Select default items by value
@@ -1159,7 +1134,7 @@ namespace AssistantAi
             ListeningModeProgressBar.Value = countdownValue; // reset progress bar
             StartAudioRecording();            
             countdownTimer.Start(); // start countdown
-            ckbxHomeworkMode.IsEnabled = false;
+            ckbxImageReview.IsEnabled = false;
         }
 
         private async void ckbxListeningMode_Unchecked(object sender, RoutedEventArgs e)
@@ -1220,7 +1195,7 @@ namespace AssistantAi
             btnSend.IsEnabled = true;
             btnClear.IsEnabled = true;
             SpinnerStatus.Visibility = Visibility.Collapsed;
-            ckbxHomeworkMode.IsEnabled = true;
+            ckbxImageReview.IsEnabled = true;
         }
 
         private void StartAudioRecording()
@@ -1252,7 +1227,7 @@ namespace AssistantAi
             {
                 ckbxMute.IsChecked = true;
                 ckbxListeningMode.IsChecked = false;
-                ckbxHomeworkMode.IsEnabled = false;
+                ckbxImageReview.IsEnabled = false;
             }
 
             ckbxMute.IsEnabled = false;
@@ -1263,10 +1238,10 @@ namespace AssistantAi
         {
             ckbxMute.IsEnabled = true;
             ckbxListeningMode.IsEnabled = true;
-            ckbxHomeworkMode.IsEnabled = true;
+            ckbxImageReview.IsEnabled = true;
         }
 
-        private void ckbxHomeworkMode_Checked(object sender, RoutedEventArgs e)
+        private void ckbxImageReview_Checked(object sender, RoutedEventArgs e)
         {
             ckbxMute.IsEnabled = false;
             ckbxListeningMode.IsEnabled = false;
@@ -1275,7 +1250,7 @@ namespace AssistantAi
             AddInstructionalText();
         }
 
-        private void ckbxHomeworkMode_Unchecked(object sender, RoutedEventArgs e)
+        private void ckbxImageReview_Unchecked(object sender, RoutedEventArgs e)
         {
             ckbxMute.IsEnabled = true;
             ckbxListeningMode.IsEnabled = true;
@@ -1294,7 +1269,6 @@ namespace AssistantAi
         {
             string sText = instructionalText;
             txtQuestion.Text = txtQuestion.Text.Replace(sText, "");
-            //txtQuestion.Text = "";
         }
 
         private void btnPickupFolder_Click(object sender, RoutedEventArgs e)
@@ -1380,14 +1354,9 @@ namespace AssistantAi
         }
 
         private static int CountTokens(string input)
-        {
-            // Average characters per token for English text
-            const int avgCharsPerToken = 4;
-
-            // Calculate the number of characters including spaces
+        {            
+            const int avgCharsPerToken = 4;            
             int characterCountIncludingSpaces = input.Length;
-
-            // Estimate the number of tokens based on the character count including spaces.
             int tokenCount = (int)Math.Ceiling((double)characterCountIncludingSpaces / avgCharsPerToken);
 
             return tokenCount;
@@ -1435,20 +1404,21 @@ namespace AssistantAi
         private async Task DownDetectorAsync()
         {
             bool isInternetAvailable = await IsInternetAvailable();
+            bool isApiActive = await CheckApiStatusAsync();
 
             if (!isInternetAvailable)
             {
                 UpdateTrafficLight("yellow");
             }
 
+            else if(!isApiActive)
+            {
+                UpdateTrafficLight("red");
+            }
+
             else
             {
-                bool isApiActive = await CheckApiStatusAsync();
-
-                if (isApiActive)
-                    UpdateTrafficLight("green");
-                else
-                    UpdateTrafficLight("red");
+                UpdateTrafficLight("green");
             }
         }
 
@@ -1463,7 +1433,9 @@ namespace AssistantAi
                     string json = await httpClient.GetStringAsync(urlPath);
                     dynamic statusData = JsonConvert.DeserializeObject(json);
                     string indicator = statusData.status.indicator;
-                    return indicator == "none";
+
+                    if (indicator == "none")
+                        return true;
                 }
 
                 catch (HttpRequestException ex)
@@ -1502,15 +1474,12 @@ namespace AssistantAi
 
         public void UpdateTrafficLight(string color)
         {
-            // Use the Dispatcher to update the UI on the UI thread
             Dispatcher.Invoke(() =>
             {
-                // First, set all lights to "off"
                 RedLight.Fill = redOff;
                 YellowLight.Fill = yellowOff;
                 GreenLight.Fill = greenOff;
 
-                // Then, based on the input, turn the appropriate light "on"
                 switch (color.ToLower())
                 {
                     case "red":

@@ -170,7 +170,7 @@
                             <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
 
-                        <CheckBox Name="ckbxHomeworkMode" Content="Homework Mode" Grid.Column="0" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxHomeworkMode_Checked" Unchecked="ckbxHomeworkMode_Unchecked"/>
+                        <CheckBox Name="ckbxImageReview" Content="Image Review Mode" Grid.Column="0" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxImageReview_Checked" Unchecked="ckbxImageReview_Unchecked"/>
                         <Button Name="btnPickupFolder" Content="Pickup Folder" Grid.Column="2" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left" Click="btnPickupFolder_Click"/>
                         <Label Name="lblPickupFolder" Grid.Column="3" Grid.ColumnSpan="7" Margin="8,8,0,0" HorizontalAlignment="Left" VerticalAlignment="Center"/>
                     </Grid>
