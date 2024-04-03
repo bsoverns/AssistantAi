@@ -351,7 +351,7 @@ namespace AssistantAi
                 try
                 {
                     SpinnerStatus.Visibility = Visibility.Visible;
-                    await SentQuestionWithImagesAsync(sQuestion, lblPickupFolder.Content.ToString());
+                    await SentQuestionWithImagesAsync(sQuestion, lblPickupFolder.Content.ToString(), int.Parse(txtMaxTokens.Text));
                 }
 
                 catch (Exception ex)
@@ -375,7 +375,7 @@ namespace AssistantAi
                     {
                         SpinnerStatus.Visibility = Visibility.Visible;
                         string base64Image = EncodeImageToBase64(currentImageFilePath); // Provide the correct path
-                        string sAnswer = await SendImageMsgAsync(sQuestion, "jpeg", base64Image);
+                        string sAnswer = await SendImageMsgAsync(sQuestion, "jpeg", int.Parse(txtMaxTokens.Text), base64Image);
                         await AssistantResponseWindow("Chat GPT: ", sAnswer);
                     }
 
@@ -571,7 +571,7 @@ namespace AssistantAi
             }
         }
 
-        public async Task<string> SendImageMsgAsync(string sQuestion, string imageType, string base64Image = null)
+        public async Task<string> SendImageMsgAsync(string sQuestion, string imageType, int maxTokens, string base64Image = null)
         {
             if (base64Image == null)
             {
@@ -602,7 +602,7 @@ namespace AssistantAi
                             }
                         }
                     },
-                    max_tokens = 300
+                    max_tokens = maxTokens
                 };
 
                 // Send Request
@@ -637,10 +637,101 @@ namespace AssistantAi
             }
         }
 
+        public async Task<string> SendMultipleImagesMsgAsync(string sQuestion, string imageType, string pickupFolder, int maxTokens)
+        {
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
+                httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+
+                var sortedFiles = Directory.EnumerateFiles(pickupFolder, "*.png")
+                    .Select(f => new FileInfo(f))
+                    .OrderBy(fi => Regex.Match(fi.Name, @"\d+").Value.PadLeft(10, '0'))
+                    .ThenBy(fi => fi.Name)
+                    .Select(fi => fi.FullName);
+
+                var contentList = new List<object> { new { type = "text", text = sQuestion } };
+                foreach (var file in sortedFiles)
+                {
+                    string base64Image = await EncodeImageToBase64Async(file);
+                    var imageContent = new
+                    {
+                        type = "image_url",
+                        image_url = new
+                        {
+                            url = $"data:image/{imageType};base64,{base64Image}"
+                        }
+                    };
+                    contentList.Add(imageContent);
+                }
+
+                var payload = new
+                {
+                    model = defaultImageModel,
+                    messages = new[]
+                    {
+                        new
+                        {
+                            role = "user",
+                            content = contentList.ToArray()
+                        }
+                    },
+                    max_tokens = maxTokens
+                };
+
+                var jsonPayload = JsonConvert.SerializeObject(payload);
+                var content = new StringContent(jsonPayload, Encoding.UTF8, "application/json");
+
+                try
+                {
+                    var response = await httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content);
+                    response.EnsureSuccessStatusCode();
+                    var responseContent = await response.Content.ReadAsStringAsync();
+
+                    var oJson = JsonConvert.DeserializeObject<Dictionary<string, object>>(responseContent);
+                    var oChoices = (JArray)oJson["choices"];
+                    var oChoice = (JObject)oChoices[0];
+                    string sResponse = (string)oChoice["message"]["content"];
+
+                    return sResponse.Trim();
+                }
+                catch (Exception ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, sQuestion + ":\r\n " + ex.ToString());
+                    System.Windows.MessageBox.Show($"Error sending images to OpenAI: {ex.Message}");
+                    return "";
+                }
+            }
+        }
+
+
+        public async Task SentQuestionWithImagesAsync(string sQuestion, string fileLocation, int maxTokens)
+        {
+            if (Directory.Exists(fileLocation))
+            {
+                string response = await SendMultipleImagesMsgAsync(sQuestion, "png", fileLocation, maxTokens);
+                await AssistantResponseWindow("Chat GPT: ", response);
+                await Task.Delay(5000);                            
+                
+                ckbxImageReview.IsChecked = false;                
+                lblPickupFolder.Content = "";
+
+            }
+
+            else
+            {
+                System.Windows.MessageBox.Show("The folder does not exist.");
+                ckbxImageReview.IsChecked = false;
+                lblPickupFolder.Content = "";
+            }
+        }
+
+        /*
         public async Task SentQuestionWithImagesAsync(string sQuestion, string fileLocation)
         {
             if (Directory.Exists(fileLocation))
-            {      
+            {
                 var sortedFiles = Directory.EnumerateFiles(fileLocation, "*.png")
                     .Select(f => new FileInfo(f))
                     .OrderBy(fi => Regex.Match(fi.Name, @"\d+").Value.PadLeft(10, '0')) // Pad numbers to ensure correct numeric sorting
@@ -650,15 +741,17 @@ namespace AssistantAi
                 foreach (string file in sortedFiles)
                 {
                     string base64Image = EncodeImageToBase64(file);
-                    string response = await SendImageMsgAsync(sQuestion, "png", base64Image);
+                    //string response = await SendImageMsgAsync(sQuestion, "png", base64Image);
+                    string response = await SendMultipleImagesMsgAsync(sQuestion, "png", base64Image);
                     await AssistantResponseWindow("Chat GPT: ", response);
                     await Task.Delay(5000);
-                }                
-                
-                ckbxImageReview.IsChecked = false;                
+                }
+
+                ckbxImageReview.IsChecked = false;
                 lblPickupFolder.Content = "";
             }
         }
+        */
 
         private async Task PlayMp3File(string filePath)
         {
@@ -731,6 +824,12 @@ namespace AssistantAi
         }
 
         private string EncodeImageToBase64(string imagePath)
+        {
+            byte[] imageArray = System.IO.File.ReadAllBytes(imagePath);
+            return Convert.ToBase64String(imageArray);
+        }
+
+        private async Task<string> EncodeImageToBase64Async(string imagePath)
         {
             byte[] imageArray = System.IO.File.ReadAllBytes(imagePath);
             return Convert.ToBase64String(imageArray);
