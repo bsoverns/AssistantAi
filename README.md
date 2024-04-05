@@ -27,15 +27,16 @@ To set up AssistantAi, please follow these steps:
 
 If you find this project helpful or inspiring, consider supporting its development. Your contributions enable the continuous improvement and creation of new and exciting features.
 
-For the latest stable version, download the build artifact from [AssistantArtifact](link_to_build_artifact) *(Note: This is currently a work in progress.)*.
+For the latest stable version, download the build from the latest workflow under the action page: https://github.com/bsoverns/AssistantAi/actions.
 
 ## API Status Indicators
 
-- **Red**: API is currently down.
+- **Red**: API is currently down or performance is degraded.
 - **Yellow**: Internet connectivity issues detected.
-- **Green**: API is fully operational and accessible.
+- **Green**: API should be fully operational and accessible.
 
-![image](https://github.com/bsoverns/AssistantAi/assets/12473875/1b879368-c4f9-43a9-a13d-713c61330e80)
+![image](https://github.com/bsoverns/AssistantAi/assets/12473875/39635100-4a0f-4b4e-b59f-76e9630aff90)
+
 
 
 
