@@ -23,6 +23,8 @@ using AssistantAi.Class;
 using System.Timers;
 using System.Windows.Forms;
 using System.Text.RegularExpressions;
+using System.Net.NetworkInformation;
+using System.Diagnostics.Tracing;
 
 namespace AssistantAi
 {
@@ -136,7 +138,8 @@ namespace AssistantAi
             imageCreationDirectory,
             currentImageCreationFilePath,
             errorLogDirectory,
-            imageReviewDirectory;
+            imageReviewDirectory,
+            apiStatus;
 
         public MainWindow()
         {
@@ -1503,26 +1506,36 @@ namespace AssistantAi
         private async Task DownDetectorAsync()
         {
             bool isInternetAvailable = await IsInternetAvailable();
-            bool isApiActive = await CheckApiStatusAsync();
+            if (isInternetAvailable)
+            {
+                bool isApiActive = await CheckApiStatusAsync();
+                if (!isApiActive)
+                {
+                    UpdateTrafficLight("red");
+                }
 
-            if (!isInternetAvailable)
+                else
+                    UpdateTrafficLight("green");
+            }
+
+            else if (!isInternetAvailable)
             {
                 UpdateTrafficLight("yellow");
-            }
+            }   
+        }
 
-            else if(!isApiActive)
-            {
-                UpdateTrafficLight("red");
-            }
+        private static string ToProperCase(string input)
+        {
+            if (string.IsNullOrEmpty(input))
+                return input;
 
-            else
-            {
-                UpdateTrafficLight("green");
-            }
+            TextInfo textInfo = CultureInfo.CurrentCulture.TextInfo;
+            return textInfo.ToTitleCase(input.ToLower());
         }
 
         private async Task<bool> CheckApiStatusAsync()
         {
+            bool returnStatus = false;
             string urlPath = @"https://status.openai.com/api/v2/status.json";
 
             using (var httpClient = new HttpClient())
@@ -1531,10 +1544,22 @@ namespace AssistantAi
                 {
                     string json = await httpClient.GetStringAsync(urlPath);
                     dynamic statusData = JsonConvert.DeserializeObject(json);
-                    string indicator = statusData.status.indicator;
+                    string indicator = statusData.status.indicator;                    
+                    string description = statusData.status.description;
 
-                    if (indicator == "none")
-                        return true;
+                    switch (indicator)
+                    {                        
+                        case "minor":
+                        case "major":
+                        case "critical":
+                            returnStatus = false;
+                            break;
+                        case "none":                            
+                            returnStatus = true;
+                            break;
+                    }
+
+                    apiStatus = ToProperCase(indicator) + " - " + description;
                 }
 
                 catch (HttpRequestException ex)
@@ -1542,10 +1567,13 @@ namespace AssistantAi
                     LogWriter errorLog = new LogWriter();
                     errorLog.WriteLog(errorLogDirectory, ex.ToString());
                     Console.WriteLine($"Error fetching JSON: {ex.Message}");
+                    returnStatus = false;
+
+                    apiStatus = "Unknown";
                 }
             }
 
-            return false;
+            return returnStatus;
         }
 
         private async Task<bool> IsInternetAvailable()
@@ -1556,13 +1584,20 @@ namespace AssistantAi
                 {
                     var reply = ping.Send("8.8.8.8", 3000);
                     if (reply.Status == System.Net.NetworkInformation.IPStatus.Success)
-                    {
+                    {                        
                         return true;
+                    }
+
+                    else
+                    {
+                        apiStatus = "Network Issues";
                     }
                 }
             }
+
             catch (Exception ex)
             {
+                apiStatus = "network issues";
                 LogWriter errorLog = new LogWriter();
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 System.Windows.MessageBox.Show($"Error: {ex.Message}");
@@ -1572,12 +1607,14 @@ namespace AssistantAi
         }
 
         public void UpdateTrafficLight(string color)
-        {
+        {            
             Dispatcher.Invoke(() =>
             {
                 RedLight.Fill = redOff;
                 YellowLight.Fill = yellowOff;
                 GreenLight.Fill = greenOff;
+                //ApiStatus.Text = apiStatus;
+                ApiStatusTextBlock.Text = apiStatus;
 
                 switch (color.ToLower())
                 {
