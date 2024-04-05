@@ -158,26 +158,7 @@
                                     <Ellipse x:Name="GreenLight" Grid.Column="2" Fill="Green" Width="20" Height="20" Stroke="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
                                 </Grid>
                             </GroupBox>
-                        </Border>
-                        <!--<GroupBox Name="LightIndicatorGroup" Header="Api Status" Grid.Column="4" Grid.ColumnSpan="2" Width="100" Margin="8,8,0,0" ToolTipService.ToolTip="">                            
-                            --><!--<GroupBox.ToolTip>
-                                <ToolTip>
-                                    <StackPanel>
-                                        <TextBlock x:Name="ApiStatus" FontWeight="Bold" />
-                                    </StackPanel>
-                                </ToolTip>
-                            </GroupBox.ToolTip>--><!--
-                            <Grid>
-                                <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="30" />
-                                    <ColumnDefinition Width="30" />
-                                    <ColumnDefinition Width="30" />
-                                </Grid.ColumnDefinitions>
-                                <Ellipse x:Name="RedLight" Fill="Red" Width="20" Height="20" Stroke="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Ellipse x:Name="YellowLight" Grid.Column="1" Fill="Yellow" Width="20" Height="20" Stroke="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                                <Ellipse x:Name="GreenLight" Grid.Column="2" Fill="Green" Width="20" Height="20" Stroke="Black" HorizontalAlignment="Center" VerticalAlignment="Center"/>
-                            </Grid>
-                        </GroupBox>-->
+                        </Border>                        
                         <Button Name="btnGetImage" Content="Get Image" Grid.Column="6" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left" Click="btnGetImage_Click"/>
                         <Button Name="btnResetImage" Content="Reset Image" Grid.Column="7" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left" IsEnabled="False" Click="btnResetImage_Click"/>
                         <Image Name="ImgPreviewImage" Grid.Column="8" Margin="8,8,0,0"/>
