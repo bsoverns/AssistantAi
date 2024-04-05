@@ -22,12 +22,11 @@ To set up AssistantAi, please follow these steps:
    - The key will be stored in a local file named "ApiKey.json".
    - Once set up, the application will automatically use this key for all future sessions.
    - To change or remove the key, simply delete the "ApiKey.json" file.
+4. Alternatively you can download the latest stable build from the top workflow (main) under the action page: https://github.com/bsoverns/AssistantAi/actions.
 
 ## Support and Contributions
 
 If you find this project helpful or inspiring, consider supporting its development. Your contributions enable the continuous improvement and creation of new and exciting features.
-
-For the latest stable version, download the build from the latest workflow under the action page: https://github.com/bsoverns/AssistantAi/actions.
 
 ## API Status Indicators
 
