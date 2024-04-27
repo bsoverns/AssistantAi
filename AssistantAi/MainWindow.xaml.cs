@@ -138,7 +138,6 @@ namespace AssistantAi
             imageCreationDirectory,
             currentImageCreationFilePath,
             errorLogDirectory,
-            imageReviewDirectory,
             apiStatus;
 
         public MainWindow()
@@ -708,7 +707,6 @@ namespace AssistantAi
             }
         }
 
-
         public async Task SentQuestionWithImagesAsync(string sQuestion, string fileLocation, int maxTokens)
         {
             if (Directory.Exists(fileLocation))
@@ -729,32 +727,6 @@ namespace AssistantAi
                 lblPickupFolder.Content = "";
             }
         }
-
-        /*
-        public async Task SentQuestionWithImagesAsync(string sQuestion, string fileLocation)
-        {
-            if (Directory.Exists(fileLocation))
-            {
-                var sortedFiles = Directory.EnumerateFiles(fileLocation, "*.png")
-                    .Select(f => new FileInfo(f))
-                    .OrderBy(fi => Regex.Match(fi.Name, @"\d+").Value.PadLeft(10, '0')) // Pad numbers to ensure correct numeric sorting
-                    .ThenBy(fi => fi.Name) // Fallback to alphabetical sort for files with the same number
-                    .Select(fi => fi.FullName);
-
-                foreach (string file in sortedFiles)
-                {
-                    string base64Image = EncodeImageToBase64(file);
-                    //string response = await SendImageMsgAsync(sQuestion, "png", base64Image);
-                    string response = await SendMultipleImagesMsgAsync(sQuestion, "png", base64Image);
-                    await AssistantResponseWindow("Chat GPT: ", response);
-                    await Task.Delay(5000);
-                }
-
-                ckbxImageReview.IsChecked = false;
-                lblPickupFolder.Content = "";
-            }
-        }
-        */
 
         private async Task PlayMp3File(string filePath)
         {
@@ -1231,12 +1203,13 @@ namespace AssistantAi
             cmbAudioVoice.IsEnabled = false;
             cmbModel.IsEnabled = false;
             ckbxMute.IsEnabled = false;
-            ckbxCreateImage.IsChecked = false;
+            ckbxCreateImage.IsEnabled = false;
+            ckbxImageReview.IsEnabled = false;
+            ckbxContinuousListeningMode.IsEnabled = false;
             countdownValue = 30; // reset countdown
             ListeningModeProgressBar.Value = countdownValue; // reset progress bar
             StartAudioRecording();            
-            countdownTimer.Start(); // start countdown
-            ckbxImageReview.IsEnabled = false;
+            countdownTimer.Start(); // start countdown            
         }
 
         private async void ckbxListeningMode_Unchecked(object sender, RoutedEventArgs e)
@@ -1296,8 +1269,150 @@ namespace AssistantAi
             ckbxMute.IsEnabled = true;
             btnSend.IsEnabled = true;
             btnClear.IsEnabled = true;
-            SpinnerStatus.Visibility = Visibility.Collapsed;
             ckbxImageReview.IsEnabled = true;
+            ckbxCreateImage.IsEnabled = true;
+            ckbxContinuousListeningMode.IsEnabled = true;
+            ListeningModeProgressBar.Value = 0;
+            SpinnerStatus.Visibility = Visibility.Collapsed;            
+        }
+
+        //This is incomplete
+        private async void ckbxTtsMode_Checked(object sender, RoutedEventArgs e)
+        {
+            btnSend.IsEnabled = false;
+            btnClear.IsEnabled = false;
+            cmbWhisperModel.IsEnabled = false;
+            cmbAudioVoice.IsEnabled = false;
+            cmbModel.IsEnabled = false;
+            ckbxMute.IsEnabled = false;
+            ckbxCreateImage.IsEnabled = false;
+            ckbxImageReview.IsEnabled = false;
+            ckbxListeningMode.IsEnabled = false;
+            countdownValue = 30; // reset countdown
+            ListeningModeProgressBar.Value = countdownValue; // reset progress bar
+            StartListening();
+            countdownTimer.Start(); // start countdown            
+        }
+
+        private void StartListening()
+        {
+            StartAudioRecording();
+
+            // Assuming GetAudioLevel is a method that returns the current audio level (0-100)
+            // Threshold level for detecting silence
+            int silenceThreshold = 10;
+            int silenceDuration = 3000; // Time in ms to consider stopped after silence
+            int checkInterval = 100; // Check every 100 ms
+
+            System.Timers.Timer silenceTimer = new System.Timers.Timer();
+            silenceTimer.Interval = checkInterval;
+            silenceTimer.Elapsed += (sender, e) =>
+            {
+                int currentAudioLevel = GetAudioLevel();
+                if (currentAudioLevel < silenceThreshold)
+                {
+                    // Increment the count of intervals with silence
+                    silenceCount += checkInterval;
+                    if (silenceCount >= silenceDuration)
+                    {
+                        StopAudioRecording();
+                        StartAudioRecording();
+                        silenceCount = 0; // Reset the silence count
+                    }
+                }
+                else
+                {
+                    silenceCount = 0; // Reset the silence count if audio level is above the threshold
+                }
+            };
+            silenceTimer.AutoReset = true;
+            silenceTimer.Start();
+
+            // Create a timer to stop recording after 30 seconds regardless
+            System.Timers.Timer durationTimer = new System.Timers.Timer();
+            durationTimer.Interval = 30000; // 30 seconds
+            durationTimer.Elapsed += (sender, e) =>
+            {
+                StopAudioRecording();
+                StartAudioRecording();
+            };
+            durationTimer.AutoReset = false; // Only trigger once
+            durationTimer.Start();
+        }
+
+        private int silenceCount = 0; // Field to keep track of silence duration
+
+        // Dummy implementation for GetAudioLevel, replace with actual method to get the audio level
+        private int GetAudioLevel()
+        {
+            // This should interface with your audio input to determine the current level
+            return 50; // Dummy value
+        }
+
+
+        //This is incomplete
+        private async void ckbxTtsModeMode_Unchecked(object sender, RoutedEventArgs e)
+        {
+            SpinnerStatus.Visibility = Visibility.Visible;
+            countdownTimer.Stop();
+            StopAudioRecording();
+            string whisperType = cmbWhisperModel.Text;
+            var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", whisperType);
+            if (response != null)
+            {
+                if (ckbxMute.IsChecked == true)
+                {
+                    try
+                    {
+                        CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+                        TextInfo textInfo = cultureInfo.TextInfo;
+                        string whisperTypeString = whisperType.ToString(); // Assume whisperType is an enum or similar
+                        string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
+
+                        await AssistantResponseWindow("", response);
+                    }
+
+                    catch (Exception ex)
+                    {
+                        LogWriter errorLog = new LogWriter();
+                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                        txtAssistantResponse.AppendText("Error:\r\n" + ex.Message);
+                    }
+                }
+
+                else
+                {
+                    try
+                    {
+                        string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                        speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                        Directory.CreateDirectory(speechDirectory);
+
+                        //string sAnswer = SendMsg(sQuestion) + "";
+                        await AssistantResponseWindow("Whisper Translate: ", response);
+                        await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
+                    }
+
+                    catch (Exception ex)
+                    {
+                        LogWriter errorLog = new LogWriter();
+                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                    }
+                }
+            }
+
+            cmbWhisperModel.IsEnabled = true;
+            cmbAudioVoice.IsEnabled = true;
+            cmbModel.IsEnabled = true;
+            ckbxMute.IsEnabled = true;
+            btnSend.IsEnabled = true;
+            btnClear.IsEnabled = true;
+            ckbxImageReview.IsEnabled = true;
+            ckbxCreateImage.IsEnabled = true;
+            ckbxListeningMode.IsEnabled = true;
+            SpinnerStatus.Visibility = Visibility.Collapsed;
+            ListeningModeProgressBar.Value = 0;
         }
 
         private void StartAudioRecording()

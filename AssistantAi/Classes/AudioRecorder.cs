@@ -4,7 +4,6 @@ using System.IO;
 
 namespace YourNamespace
 {
-    //internal class AudioRecorder
     public class AudioRecorder
     {
         private WaveInEvent waveSource = null;
