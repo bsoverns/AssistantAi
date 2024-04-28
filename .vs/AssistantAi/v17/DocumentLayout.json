@@ -7,7 +7,7 @@
       "RelativeMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|solutionrelative:assistantai\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|d:\\sandbox\\assistantai\\assistantai\\classes\\audiorecorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|D:\\Sandbox\\AssistantAi\\assistantai\\classes\\audiorecorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|solutionrelative:assistantai\\classes\\audiorecorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
@@ -22,7 +22,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 5,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -33,8 +33,17 @@
               "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{004be353-6879-467c-9d1e-9ac23cdf6d49}"
+              "$type": "Document",
+              "DocumentIndex": 0,
+              "Title": "MainWindow.xaml.cs",
+              "DocumentMoniker": "D:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "AssistantAi\\MainWindow.xaml.cs",
+              "ToolTip": "D:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
+              "RelativeToolTip": "AssistantAi\\MainWindow.xaml.cs",
+              "ViewState": "AQIAAGoFAAAAAAAAAAA2wGoAAAAAAAAA",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
+              "WhenOpened": "2024-03-14T02:48:29.015Z",
+              "EditorCaption": ""
             },
             {
               "$type": "Document",
@@ -44,7 +53,7 @@
               "RelativeDocumentMoniker": "AssistantAi\\Classes\\AudioRecorder.cs",
               "ToolTip": "D:\\Sandbox\\AssistantAi\\AssistantAi\\Classes\\AudioRecorder.cs",
               "RelativeToolTip": "AssistantAi\\Classes\\AudioRecorder.cs",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAAAUAAAABAAAA",
+              "ViewState": "AQIAAAAAAAAAAAAAAAAAADAAAAAQAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-04-27T01:55:26.777Z",
               "EditorCaption": ""
@@ -59,19 +68,6 @@
               "RelativeToolTip": "AssistantAi\\MainWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2024-04-05T02:45:47.906Z",
-              "EditorCaption": ""
-            },
-            {
-              "$type": "Document",
-              "DocumentIndex": 0,
-              "Title": "MainWindow.xaml.cs",
-              "DocumentMoniker": "D:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
-              "RelativeDocumentMoniker": "AssistantAi\\MainWindow.xaml.cs",
-              "ToolTip": "D:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
-              "RelativeToolTip": "AssistantAi\\MainWindow.xaml.cs",
-              "ViewState": "AQIAAB4FAAAAAAAAAAAUwGsAAAAqAAAA",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2024-03-14T02:48:29.015Z",
               "EditorCaption": ""
             }
           ]

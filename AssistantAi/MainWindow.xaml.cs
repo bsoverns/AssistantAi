@@ -105,7 +105,7 @@ namespace AssistantAi
     {
         List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-1106", "gpt-4" }; //These seem broken in the program, "gpt-4-32k" };
 
-        public AudioRecorder audioRecorder = new AudioRecorder();
+        private List<AudioRecorder> activeRecorders = new List<AudioRecorder>();
         private MediaPlayer mediaPlayer;
         public DispatcherTimer countdownTimer;
         System.Timers.Timer apiCheckTimer;
@@ -1216,7 +1216,8 @@ namespace AssistantAi
         {
             SpinnerStatus.Visibility = Visibility.Visible;
             countdownTimer.Stop();
-            StopAudioRecording();
+            //StopAudioRecording();
+            StopAndDisposeRecorders();
             string whisperType = cmbWhisperModel.Text;
             var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", whisperType);
             if (response != null)
@@ -1277,7 +1278,7 @@ namespace AssistantAi
         }
 
         //This is incomplete
-        private async void ckbxTtsMode_Checked(object sender, RoutedEventArgs e)
+        private async void ckbxSttMode_Checked(object sender, RoutedEventArgs e)
         {
             btnSend.IsEnabled = false;
             btnClear.IsEnabled = false;
@@ -1290,72 +1291,17 @@ namespace AssistantAi
             ckbxListeningMode.IsEnabled = false;
             countdownValue = 30; // reset countdown
             ListeningModeProgressBar.Value = countdownValue; // reset progress bar
-            StartListening();
+            StartAudioRecording();
             countdownTimer.Start(); // start countdown            
         }
 
-        private void StartListening()
-        {
-            StartAudioRecording();
-
-            // Assuming GetAudioLevel is a method that returns the current audio level (0-100)
-            // Threshold level for detecting silence
-            int silenceThreshold = 10;
-            int silenceDuration = 3000; // Time in ms to consider stopped after silence
-            int checkInterval = 100; // Check every 100 ms
-
-            System.Timers.Timer silenceTimer = new System.Timers.Timer();
-            silenceTimer.Interval = checkInterval;
-            silenceTimer.Elapsed += (sender, e) =>
-            {
-                int currentAudioLevel = GetAudioLevel();
-                if (currentAudioLevel < silenceThreshold)
-                {
-                    // Increment the count of intervals with silence
-                    silenceCount += checkInterval;
-                    if (silenceCount >= silenceDuration)
-                    {
-                        StopAudioRecording();
-                        StartAudioRecording();
-                        silenceCount = 0; // Reset the silence count
-                    }
-                }
-                else
-                {
-                    silenceCount = 0; // Reset the silence count if audio level is above the threshold
-                }
-            };
-            silenceTimer.AutoReset = true;
-            silenceTimer.Start();
-
-            // Create a timer to stop recording after 30 seconds regardless
-            System.Timers.Timer durationTimer = new System.Timers.Timer();
-            durationTimer.Interval = 30000; // 30 seconds
-            durationTimer.Elapsed += (sender, e) =>
-            {
-                StopAudioRecording();
-                StartAudioRecording();
-            };
-            durationTimer.AutoReset = false; // Only trigger once
-            durationTimer.Start();
-        }
-
-        private int silenceCount = 0; // Field to keep track of silence duration
-
-        // Dummy implementation for GetAudioLevel, replace with actual method to get the audio level
-        private int GetAudioLevel()
-        {
-            // This should interface with your audio input to determine the current level
-            return 50; // Dummy value
-        }
-
-
         //This is incomplete
-        private async void ckbxTtsModeMode_Unchecked(object sender, RoutedEventArgs e)
+        private async void ckbxSttModeMode_Unchecked(object sender, RoutedEventArgs e)
         {
             SpinnerStatus.Visibility = Visibility.Visible;
             countdownTimer.Stop();
-            StopAudioRecording();
+            //StopAudioRecording();
+            StopAndDisposeRecorders();
             string whisperType = cmbWhisperModel.Text;
             var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", whisperType);
             if (response != null)
@@ -1415,27 +1361,57 @@ namespace AssistantAi
             ListeningModeProgressBar.Value = 0;
         }
 
+        //private void StartAudioRecording()
+        //{
+        //    try
+        //    {
+        //        // Generate a unique file name for each recording session
+        //        string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.mp3";
+        //        currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);
+
+        //        // Ensure the directory exists
+        //        Directory.CreateDirectory(recordingsDirectory);
+
+        //        // Start recording to the specified file
+        //        audioRecorder.StartRecording(currentRecordingPath);
+        //    }
+
+        //    catch (Exception ex)
+        //    {
+        //        LogWriter errorLog = new LogWriter();
+        //        errorLog.WriteLog(errorLogDirectory, ex.ToString());
+        //        System.Windows.MessageBox.Show($"An error occurred while starting recording: {ex.Message}");
+        //    }
+        //}
+
         private void StartAudioRecording()
         {
             try
             {
-                // Generate a unique file name for each recording session
-                string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.mp3";
-                currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);
-
-                // Ensure the directory exists
+                string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                currentRecordingPath = Path.Combine(recordingsDirectory, fileName);
                 Directory.CreateDirectory(recordingsDirectory);
 
-                // Start recording to the specified file
+                var audioRecorder = new AudioRecorder(recordingsDirectory);
                 audioRecorder.StartRecording(currentRecordingPath);
+                activeRecorders.Add(audioRecorder); // Store the recorder
             }
-
             catch (Exception ex)
             {
                 LogWriter errorLog = new LogWriter();
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 System.Windows.MessageBox.Show($"An error occurred while starting recording: {ex.Message}");
             }
+        }
+
+        private void StopAndDisposeRecorders()
+        {
+            foreach (var recorder in activeRecorders)
+            {
+                recorder.StopRecording();
+                recorder.Dispose(); // Properly dispose each recorder
+            }
+            activeRecorders.Clear(); // Clear the list after stopping all recorders
         }
 
         private void ckbxCreateImage_Checked(object sender, RoutedEventArgs e)
@@ -1500,10 +1476,11 @@ namespace AssistantAi
             }
         }
 
-        private void StopAudioRecording()
-        {
-            audioRecorder.StopRecording();
-        }
+        //old stop method
+        //private void StopAudioRecording()
+        //{
+        //    audioRecorder.StopRecording();
+        //}
 
         private void InitializeCountdownTimer()
         {
