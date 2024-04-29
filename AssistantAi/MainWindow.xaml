@@ -90,7 +90,7 @@
                         <Label Content="Whisper Model" Grid.Column="5" Margin="8,8,0,0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
                         <ComboBox Name="cmbWhisperModel" Grid.Column="6" Grid.ColumnSpan="2"  Margin="8,8,0,0" SelectionChanged="cmbWhisperModel_SelectionChanged"/>
                         <CheckBox Name="ckbxListeningMode" Content="Translate/Transcribe Mode" Grid.Column="8" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxListeningMode_Checked" Unchecked="ckbxListeningMode_Unchecked"/>
-                        <CheckBox Name="ckbxContinuousListeningMode" Content="Contiuous TTS Mode" Grid.Column="10" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxSttMode_Checked" Unchecked="ckbxSttModeMode_Unchecked"/>
+                        <CheckBox Name="ckbxContinuousListeningMode" Content="Contiuous STT Mode" Grid.Column="10" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxSttMode_Checked" Unchecked="ckbxSttModeMode_Unchecked"/>
                     </Grid>
 
                     <!-- Third set of controls -->

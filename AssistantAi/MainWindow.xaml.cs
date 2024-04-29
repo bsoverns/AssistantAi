@@ -104,6 +104,7 @@ namespace AssistantAi
     public partial class MainWindow : Window
     {
         List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-1106", "gpt-4" }; //These seem broken in the program, "gpt-4-32k" };
+        List<string> audioFileQueue = new List<string>();
 
         private List<AudioRecorder> activeRecorders = new List<AudioRecorder>();
         private MediaPlayer mediaPlayer;
@@ -138,7 +139,8 @@ namespace AssistantAi
             imageCreationDirectory,
             currentImageCreationFilePath,
             errorLogDirectory,
-            apiStatus;
+            apiStatus,
+            listeningMode = "Standard";
 
         public MainWindow()
         {
@@ -1208,6 +1210,7 @@ namespace AssistantAi
             ckbxContinuousListeningMode.IsEnabled = false;
             countdownValue = 30; // reset countdown
             ListeningModeProgressBar.Value = countdownValue; // reset progress bar
+            listeningMode = "Standard";
             StartAudioRecording();            
             countdownTimer.Start(); // start countdown            
         }
@@ -1291,61 +1294,70 @@ namespace AssistantAi
             ckbxListeningMode.IsEnabled = false;
             countdownValue = 30; // reset countdown
             ListeningModeProgressBar.Value = countdownValue; // reset progress bar
+            listeningMode = "Continuous";
+            audioFileQueue.Clear();
             StartAudioRecording();
             countdownTimer.Start(); // start countdown            
         }
+
 
         //This is incomplete
         private async void ckbxSttModeMode_Unchecked(object sender, RoutedEventArgs e)
         {
             SpinnerStatus.Visibility = Visibility.Visible;
             countdownTimer.Stop();
-            //StopAudioRecording();
             StopAndDisposeRecorders();
             string whisperType = cmbWhisperModel.Text;
-            var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", whisperType);
-            if (response != null)
+            for (int i = audioFileQueue.Count - 1; i >= 0; i--)
             {
-                if (ckbxMute.IsChecked == true)
+                string audioFile = audioFileQueue[i];
+                var response = await WhisperMsgAsync(audioFile, @"whisper-1", whisperType);
+                if (response != null)
                 {
-                    try
+                    if (ckbxMute.IsChecked == true)
                     {
-                        CultureInfo cultureInfo = CultureInfo.CurrentCulture;
-                        TextInfo textInfo = cultureInfo.TextInfo;
-                        string whisperTypeString = whisperType.ToString(); // Assume whisperType is an enum or similar
-                        string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
+                        try
+                        {
+                            CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+                            TextInfo textInfo = cultureInfo.TextInfo;
+                            string whisperTypeString = whisperType.ToString();
+                            string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
 
-                        await AssistantResponseWindow("", response);
+                            await AssistantResponseWindow("", response);
+                        }
+
+                        catch (Exception ex)
+                        {
+                            LogWriter errorLog = new LogWriter();
+                            errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                            txtAssistantResponse.AppendText("Error:\r\n" + ex.Message);
+                        }
                     }
 
-                    catch (Exception ex)
+                    else
                     {
-                        LogWriter errorLog = new LogWriter();
-                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                        txtAssistantResponse.AppendText("Error:\r\n" + ex.Message);
+
+                        try
+                        {
+                            string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                            speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                            Directory.CreateDirectory(speechDirectory);
+
+                            //string sAnswer = SendMsg(sQuestion) + "";
+                            await AssistantResponseWindow("Whisper Translate: ", response);
+                            await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
+                        }
+
+                        catch (Exception ex)
+                        {
+                            LogWriter errorLog = new LogWriter();
+                            errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                            txtAssistantResponse.AppendText("Error: " + ex.Message);
+                        }
                     }
                 }
 
-                else
-                {
-                    try
-                    {
-                        string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
-                        speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
-                        Directory.CreateDirectory(speechDirectory);
-
-                        //string sAnswer = SendMsg(sQuestion) + "";
-                        await AssistantResponseWindow("Whisper Translate: ", response);
-                        await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
-                    }
-
-                    catch (Exception ex)
-                    {
-                        LogWriter errorLog = new LogWriter();
-                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                        txtAssistantResponse.AppendText("Error: " + ex.Message);
-                    }
-                }
+                audioFileQueue.RemoveAt(i);
             }
 
             cmbWhisperModel.IsEnabled = true;
@@ -1361,41 +1373,20 @@ namespace AssistantAi
             ListeningModeProgressBar.Value = 0;
         }
 
-        //private void StartAudioRecording()
-        //{
-        //    try
-        //    {
-        //        // Generate a unique file name for each recording session
-        //        string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.mp3";
-        //        currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);
-
-        //        // Ensure the directory exists
-        //        Directory.CreateDirectory(recordingsDirectory);
-
-        //        // Start recording to the specified file
-        //        audioRecorder.StartRecording(currentRecordingPath);
-        //    }
-
-        //    catch (Exception ex)
-        //    {
-        //        LogWriter errorLog = new LogWriter();
-        //        errorLog.WriteLog(errorLogDirectory, ex.ToString());
-        //        System.Windows.MessageBox.Show($"An error occurred while starting recording: {ex.Message}");
-        //    }
-        //}
-
         private void StartAudioRecording()
         {
             try
             {
-                string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.wav";                
                 currentRecordingPath = Path.Combine(recordingsDirectory, fileName);
+                audioFileQueue.Add(currentRecordingPath);
                 Directory.CreateDirectory(recordingsDirectory);
 
                 var audioRecorder = new AudioRecorder(recordingsDirectory);
                 audioRecorder.StartRecording(currentRecordingPath);
                 activeRecorders.Add(audioRecorder); // Store the recorder
             }
+
             catch (Exception ex)
             {
                 LogWriter errorLog = new LogWriter();
@@ -1408,9 +1399,20 @@ namespace AssistantAi
         {
             foreach (var recorder in activeRecorders)
             {
-                recorder.StopRecording();
-                recorder.Dispose(); // Properly dispose each recorder
+                try
+                {
+                    recorder.StopRecording();
+                    recorder.Dispose(); // Properly dispose each recorder
+                }
+
+                catch (Exception ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    System.Windows.MessageBox.Show($"An error occurred while stopping recording: {ex.Message}");
+                }
             }
+
             activeRecorders.Clear(); // Clear the list after stopping all recorders
         }
 
@@ -1476,12 +1478,6 @@ namespace AssistantAi
             }
         }
 
-        //old stop method
-        //private void StopAudioRecording()
-        //{
-        //    audioRecorder.StopRecording();
-        //}
-
         private void InitializeCountdownTimer()
         {
             countdownTimer = new DispatcherTimer();
@@ -1495,12 +1491,80 @@ namespace AssistantAi
             countdownValue--;
             ListeningModeProgressBar.Value = countdownValue;
 
-            if (countdownValue <= 0)
+            if (countdownValue <= 0 && listeningMode == "Standard")
             {
                 countdownTimer.Stop();
                 ckbxListeningMode.IsChecked = false; 
             }
+
+            else if (countdownValue <= 0 && listeningMode == "Continuous")
+            {
+                countdownTimer.Stop();
+                StopAndDisposeRecorders();
+                ContinuousSST();
+                countdownValue = 30; // reset countdown
+                ListeningModeProgressBar.Value = countdownValue;
+                countdownTimer.Start();
+                StartAudioRecording();
+            }
         }
+
+        private async Task ContinuousSST()
+        {
+            string whisperType = cmbWhisperModel.Text;
+            for (int i = audioFileQueue.Count - 2; i >= 0; i--)
+            {
+                string audioFile = audioFileQueue[i];
+                var response = await WhisperMsgAsync(audioFile, @"whisper-1", whisperType);
+                if (response != null)
+                {
+                    if (ckbxMute.IsChecked == true)
+                    {
+                        try
+                        {
+                            CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+                            TextInfo textInfo = cultureInfo.TextInfo;
+                            string whisperTypeString = whisperType.ToString();
+                            string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
+
+                            await AssistantResponseWindow("", response);
+                        }
+
+                        catch (Exception ex)
+                        {
+                            LogWriter errorLog = new LogWriter();
+                            errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                            txtAssistantResponse.AppendText("Error:\r\n" + ex.Message);
+                        }
+                    }
+
+                    else
+                    {
+
+                        try
+                        {
+                            string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                            speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                            Directory.CreateDirectory(speechDirectory);
+
+                            //string sAnswer = SendMsg(sQuestion) + "";
+                            await AssistantResponseWindow("Whisper Translate: ", response);
+                            await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
+                        }
+
+                        catch (Exception ex)
+                        {
+                            LogWriter errorLog = new LogWriter();
+                            errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                            txtAssistantResponse.AppendText("Error: " + ex.Message);
+                        }
+                    }
+                }
+
+                audioFileQueue.RemoveAt(i);
+            }
+        }
+
 
         private void cmbWhisperModel_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
