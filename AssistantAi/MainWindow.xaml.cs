@@ -1059,7 +1059,8 @@ namespace AssistantAi
                 else
                 {
                     // It's not code, append it as plain text
-                    AppendTextToRichTextBox(typeResponse + " " + response);
+                    //AppendTextToRichTextBox(typeResponse + " " + response);
+                    AppendTextToRichTextBox(typeResponse + " " + response, false, true);
                 }
 
                 txtAssistantResponse.ScrollToEnd();
@@ -1109,9 +1110,47 @@ namespace AssistantAi
         }
 
         //This is incomplete
-        private void AppendTextToRichTextBox(string text, bool isCodeBlock = false)
+        //private void AppendTextToRichTextBox(string text, bool isCodeBlock = false)
+        //{
+        //    Paragraph paragraph = new Paragraph();
+
+        //    if (isCodeBlock)
+        //    {
+        //        paragraph.FontFamily = new System.Windows.Media.FontFamily("Courier");
+        //        paragraph.Background = System.Windows.Media.Brushes.LightGray;
+        //        paragraph.Padding = new Thickness(5);
+        //        HighlightCode(paragraph, text);
+        //    }
+
+        //    else
+        //    {
+        //        paragraph.Inlines.Add(new Run(text));
+        //    }
+
+        //    txtAssistantResponse.Document.Blocks.Add(paragraph);
+        //}
+
+        private void AppendTextToRichTextBox(string text, bool isCodeBlock = false, bool appendToLastParagraph = false)
         {
-            Paragraph paragraph = new Paragraph();
+            Paragraph paragraph;
+
+            // Determine whether to add a new paragraph or append to the last
+            if (appendToLastParagraph && txtAssistantResponse.Document.Blocks.Count > 0)
+            {
+                // Get the last block in the document if it's a paragraph
+                paragraph = txtAssistantResponse.Document.Blocks.LastBlock as Paragraph;
+                if (paragraph == null)
+                {
+                    paragraph = new Paragraph();
+                    txtAssistantResponse.Document.Blocks.Add(paragraph);
+                }
+            }
+            else
+            {
+                // Create a new paragraph for new thoughts or separated sections
+                paragraph = new Paragraph();
+                txtAssistantResponse.Document.Blocks.Add(paragraph);
+            }
 
             if (isCodeBlock)
             {
@@ -1120,13 +1159,10 @@ namespace AssistantAi
                 paragraph.Padding = new Thickness(5);
                 HighlightCode(paragraph, text);
             }
-
             else
             {
                 paragraph.Inlines.Add(new Run(text));
             }
-
-            txtAssistantResponse.Document.Blocks.Add(paragraph);
         }
 
         //This is incomplete
@@ -1201,6 +1237,7 @@ namespace AssistantAi
         {
             btnSend.IsEnabled = false;
             btnClear.IsEnabled = false;
+            btnGetImage.IsEnabled = false;
             cmbWhisperModel.IsEnabled = false; 
             cmbAudioVoice.IsEnabled = false;
             cmbModel.IsEnabled = false;
@@ -1276,6 +1313,7 @@ namespace AssistantAi
             ckbxImageReview.IsEnabled = true;
             ckbxCreateImage.IsEnabled = true;
             ckbxContinuousListeningMode.IsEnabled = true;
+            btnGetImage.IsEnabled = true;
             ListeningModeProgressBar.Value = 0;
             SpinnerStatus.Visibility = Visibility.Collapsed;            
         }
@@ -1283,15 +1321,7 @@ namespace AssistantAi
         //This is incomplete
         private async void ckbxSttMode_Checked(object sender, RoutedEventArgs e)
         {
-            btnSend.IsEnabled = false;
-            btnClear.IsEnabled = false;
-            cmbWhisperModel.IsEnabled = false;
-            cmbAudioVoice.IsEnabled = false;
-            cmbModel.IsEnabled = false;
-            ckbxMute.IsEnabled = false;
-            ckbxCreateImage.IsEnabled = false;
-            ckbxImageReview.IsEnabled = false;
-            ckbxListeningMode.IsEnabled = false;
+            DisableUI();            
             countdownValue = 30; // reset countdown
             ListeningModeProgressBar.Value = countdownValue; // reset progress bar
             listeningMode = "Continuous";
@@ -1299,7 +1329,6 @@ namespace AssistantAi
             StartAudioRecording();
             countdownTimer.Start(); // start countdown            
         }
-
 
         //This is incomplete
         private async void ckbxSttModeMode_Unchecked(object sender, RoutedEventArgs e)
@@ -1360,17 +1389,37 @@ namespace AssistantAi
                 audioFileQueue.RemoveAt(i);
             }
 
+            EnableUI();
+            SpinnerStatus.Visibility = Visibility.Collapsed;
+            ListeningModeProgressBar.Value = 0;
+        }
+
+        private void DisableUI()
+        {
+            btnSend.IsEnabled = false;
+            btnClear.IsEnabled = false;
+            btnGetImage.IsEnabled = false;
+            cmbWhisperModel.IsEnabled = false;
+            cmbAudioVoice.IsEnabled = false;
+            cmbModel.IsEnabled = false;
+            ckbxMute.IsEnabled = false;
+            ckbxCreateImage.IsEnabled = false;
+            ckbxImageReview.IsEnabled = false;
+            ckbxListeningMode.IsEnabled = false;
+        }
+
+        private void EnableUI()
+        {
+            btnSend.IsEnabled = true;
+            btnClear.IsEnabled = true;
+            btnGetImage.IsEnabled = true;
             cmbWhisperModel.IsEnabled = true;
             cmbAudioVoice.IsEnabled = true;
             cmbModel.IsEnabled = true;
             ckbxMute.IsEnabled = true;
-            btnSend.IsEnabled = true;
-            btnClear.IsEnabled = true;
-            ckbxImageReview.IsEnabled = true;
             ckbxCreateImage.IsEnabled = true;
+            ckbxImageReview.IsEnabled = true;
             ckbxListeningMode.IsEnabled = true;
-            SpinnerStatus.Visibility = Visibility.Collapsed;
-            ListeningModeProgressBar.Value = 0;
         }
 
         private void StartAudioRecording()
@@ -1402,7 +1451,7 @@ namespace AssistantAi
                 try
                 {
                     recorder.StopRecording();
-                    recorder.Dispose(); // Properly dispose each recorder
+                    recorder.Dispose(); 
                 }
 
                 catch (Exception ex)
@@ -1512,7 +1561,7 @@ namespace AssistantAi
         private async Task ContinuousSST()
         {
             string whisperType = cmbWhisperModel.Text;
-            for (int i = audioFileQueue.Count - 2; i >= 0; i--)
+            for (int i = 0; i <= audioFileQueue.Count - 1; i++)
             {
                 string audioFile = audioFileQueue[i];
                 var response = await WhisperMsgAsync(audioFile, @"whisper-1", whisperType);

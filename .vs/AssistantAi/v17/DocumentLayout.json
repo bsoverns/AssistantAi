@@ -40,7 +40,7 @@
               "RelativeDocumentMoniker": "AssistantAi\\MainWindow.xaml.cs",
               "ToolTip": "D:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
               "RelativeToolTip": "AssistantAi\\MainWindow.xaml.cs",
-              "ViewState": "AQIAAM4FAAAAAAAAAAAAwNkFAAANAAAA",
+              "ViewState": "AQIAABIGAAAAAAAAAAAowBwGAAAMAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-03-14T02:48:29.015Z",
               "EditorCaption": ""
@@ -53,11 +53,32 @@
               "RelativeDocumentMoniker": "AssistantAi\\Classes\\AudioRecorder.cs",
               "ToolTip": "D:\\Sandbox\\AssistantAi\\AssistantAi\\Classes\\AudioRecorder.cs",
               "RelativeToolTip": "AssistantAi\\Classes\\AudioRecorder.cs",
-              "ViewState": "AQIAAAAAAAAAAAAAAAAAADAAAAAQAAAA",
+              "ViewState": "AQIAABwAAAAAAAAAAAAnwDAAAAAQAAAA",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-04-27T01:55:26.777Z",
               "EditorCaption": ""
-            },
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "Orientation": 0,
+      "VerticalTabListWidth": 256,
+      "FloatingWindowState": {
+        "Id": "d4fa5bec-a5c5-4113-84b2-37525ca141ac",
+        "Display": 0,
+        "X": 32,
+        "Y": 70,
+        "Width": 1553,
+        "Height": 792,
+        "WindowState": 0
+      },
+      "DocumentGroups": [
+        {
+          "DockedWidth": 200,
+          "SelectedChildIndex": 0,
+          "Children": [
             {
               "$type": "Document",
               "DocumentIndex": 1,
