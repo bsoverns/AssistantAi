@@ -1136,27 +1136,6 @@ namespace AssistantAi
             }
         }
 
-        //This is incomplete
-        //private void AppendTextToRichTextBox(string text, bool isCodeBlock = false)
-        //{
-        //    Paragraph paragraph = new Paragraph();
-
-        //    if (isCodeBlock)
-        //    {
-        //        paragraph.FontFamily = new System.Windows.Media.FontFamily("Courier");
-        //        paragraph.Background = System.Windows.Media.Brushes.LightGray;
-        //        paragraph.Padding = new Thickness(5);
-        //        HighlightCode(paragraph, text);
-        //    }
-
-        //    else
-        //    {
-        //        paragraph.Inlines.Add(new Run(text));
-        //    }
-
-        //    txtAssistantResponse.Document.Blocks.Add(paragraph);
-        //}
-
         private void AppendTextToRichTextBox(string text, bool isCodeBlock = false, bool appendToLastParagraph = false)
         {
             Paragraph paragraph;
@@ -1620,7 +1599,6 @@ namespace AssistantAi
 
                     else
                     {
-
                         try
                         {
                             string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
