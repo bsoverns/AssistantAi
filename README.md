@@ -34,7 +34,8 @@ If you find this project helpful or inspiring, consider supporting its developme
 - **Yellow**: Internet connectivity issues detected.
 - **Green**: API should be fully operational and accessible.
 
-![image](https://github.com/bsoverns/AssistantAi/assets/12473875/39635100-4a0f-4b4e-b59f-76e9630aff90)
+![image](https://github.com/bsoverns/AssistantAi/assets/12473875/1167fe06-b54b-4db3-9fa8-f6077f5c1285)
+
 
 
 
