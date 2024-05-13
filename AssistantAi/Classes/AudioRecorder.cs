@@ -1,4 +1,5 @@
-﻿using NAudio.Wave;
+﻿using AssistantAi.Class;
+using NAudio.Wave;
 using System;
 using System.IO;
 

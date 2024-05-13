@@ -52,7 +52,7 @@
           "dependencies": {
             "HtmlAgilityPack": {
               "target": "Package",
-              "version": "[1.11.58, )"
+              "version": "[1.11.61, )"
             },
             "NAudio": {
               "target": "Package",

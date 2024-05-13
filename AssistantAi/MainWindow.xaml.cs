@@ -25,6 +25,7 @@ using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using System.Net.NetworkInformation;
 using System.Diagnostics.Tracing;
+using NAudio.Wave;
 
 namespace AssistantAi
 {
@@ -761,6 +762,12 @@ namespace AssistantAi
 
         public async Task<string> WhisperMsgAsync(string audioFilePath, string modelName, string modelType)
         {
+            if (!AudioHasSpeech(audioFilePath))
+            {
+                await DeleteFileAsync(audioFilePath);
+                return null;
+            }
+
             string sUrl = "https://api.openai.com/v1/audio/" + modelType;
 
             using (var httpClient = new HttpClient())
@@ -797,6 +804,26 @@ namespace AssistantAi
                 {
                     await DeleteFileAsync(audioFilePath);
                 }
+            }
+        }
+
+        private bool AudioHasSpeech(string filePath)
+        {
+            using (var reader = new AudioFileReader(filePath))
+            {
+                float maxVolume = 0f;
+                float[] buffer = new float[reader.WaveFormat.SampleRate];
+                int read;
+                while ((read = reader.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    for (int n = 0; n < read; n++)
+                    {
+                        var abs = Math.Abs(buffer[n]);
+                        if (abs > maxVolume) maxVolume = abs;
+                    }
+                }
+                Console.WriteLine("Max volume: " + maxVolume);
+                return maxVolume > 0.01f; // Threshold value to be determined based on testing
             }
         }
 
@@ -1030,7 +1057,7 @@ namespace AssistantAi
             }                
         }
 
-        private async Task AssistantResponseWindow(string typeResponse, string response)
+        private async Task AssistantResponseWindow(string typeResponse, string response, bool appendToLastParagraph = false)
         {
             response = response.Trim();
 
@@ -1247,6 +1274,7 @@ namespace AssistantAi
             ckbxContinuousListeningMode.IsEnabled = false;
             countdownValue = 30; // reset countdown
             ListeningModeProgressBar.Value = countdownValue; // reset progress bar
+            ListeningModeProgressBar.Maximum = countdownValue;
             listeningMode = "Standard";
             StartAudioRecording();            
             countdownTimer.Start(); // start countdown            
@@ -1318,19 +1346,18 @@ namespace AssistantAi
             SpinnerStatus.Visibility = Visibility.Collapsed;            
         }
 
-        //This is incomplete
         private async void ckbxSttMode_Checked(object sender, RoutedEventArgs e)
         {
-            DisableUI();            
-            countdownValue = 30; // reset countdown
-            ListeningModeProgressBar.Value = countdownValue; // reset progress bar
+            DisableUI();
+            countdownValue = 5; // reset countdown
+            ListeningModeProgressBar.Value = countdownValue;
+            ListeningModeProgressBar.Maximum = countdownValue;
             listeningMode = "Continuous";
             audioFileQueue.Clear();
             StartAudioRecording();
             countdownTimer.Start(); // start countdown            
         }
 
-        //This is incomplete
         private async void ckbxSttModeMode_Unchecked(object sender, RoutedEventArgs e)
         {
             SpinnerStatus.Visibility = Visibility.Visible;
@@ -1352,7 +1379,7 @@ namespace AssistantAi
                             string whisperTypeString = whisperType.ToString();
                             string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
 
-                            await AssistantResponseWindow("", response);
+                            await AssistantResponseWindow("", response, true);
                         }
 
                         catch (Exception ex)
@@ -1543,6 +1570,9 @@ namespace AssistantAi
             if (countdownValue <= 0 && listeningMode == "Standard")
             {
                 countdownTimer.Stop();
+                countdownValue = 30; // reset countdown
+                ListeningModeProgressBar.Value = countdownValue;
+                ListeningModeProgressBar.Maximum = countdownValue;
                 ckbxListeningMode.IsChecked = false; 
             }
 
@@ -1551,8 +1581,9 @@ namespace AssistantAi
                 countdownTimer.Stop();
                 StopAndDisposeRecorders();
                 ContinuousSST();
-                countdownValue = 30; // reset countdown
+                countdownValue = 5; // reset countdown
                 ListeningModeProgressBar.Value = countdownValue;
+                ListeningModeProgressBar.Maximum = countdownValue;
                 countdownTimer.Start();
                 StartAudioRecording();
             }
@@ -1576,7 +1607,7 @@ namespace AssistantAi
                             string whisperTypeString = whisperType.ToString();
                             string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
 
-                            await AssistantResponseWindow("", response);
+                            await AssistantResponseWindow("", response, true);
                         }
 
                         catch (Exception ex)
@@ -1613,8 +1644,7 @@ namespace AssistantAi
                 audioFileQueue.RemoveAt(i);
             }
         }
-
-
+        
         private void cmbWhisperModel_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string whisperType = cmbWhisperModel.SelectedItem.ToString();
