@@ -25,6 +25,7 @@ using System.Windows.Forms;
 using System.Text.RegularExpressions;
 using System.Net.NetworkInformation;
 using System.Diagnostics.Tracing;
+using NAudio.Wave;
 
 namespace AssistantAi
 {
@@ -104,8 +105,9 @@ namespace AssistantAi
     public partial class MainWindow : Window
     {
         List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-1106", "gpt-4" }; //These seem broken in the program, "gpt-4-32k" };
+        List<string> audioFileQueue = new List<string>();
 
-        public AudioRecorder audioRecorder = new AudioRecorder();
+        private List<AudioRecorder> activeRecorders = new List<AudioRecorder>();
         private MediaPlayer mediaPlayer;
         public DispatcherTimer countdownTimer;
         System.Timers.Timer apiCheckTimer;
@@ -138,8 +140,8 @@ namespace AssistantAi
             imageCreationDirectory,
             currentImageCreationFilePath,
             errorLogDirectory,
-            imageReviewDirectory,
-            apiStatus;
+            apiStatus,
+            listeningMode = "Standard";
 
         public MainWindow()
         {
@@ -708,7 +710,6 @@ namespace AssistantAi
             }
         }
 
-
         public async Task SentQuestionWithImagesAsync(string sQuestion, string fileLocation, int maxTokens)
         {
             if (Directory.Exists(fileLocation))
@@ -729,32 +730,6 @@ namespace AssistantAi
                 lblPickupFolder.Content = "";
             }
         }
-
-        /*
-        public async Task SentQuestionWithImagesAsync(string sQuestion, string fileLocation)
-        {
-            if (Directory.Exists(fileLocation))
-            {
-                var sortedFiles = Directory.EnumerateFiles(fileLocation, "*.png")
-                    .Select(f => new FileInfo(f))
-                    .OrderBy(fi => Regex.Match(fi.Name, @"\d+").Value.PadLeft(10, '0')) // Pad numbers to ensure correct numeric sorting
-                    .ThenBy(fi => fi.Name) // Fallback to alphabetical sort for files with the same number
-                    .Select(fi => fi.FullName);
-
-                foreach (string file in sortedFiles)
-                {
-                    string base64Image = EncodeImageToBase64(file);
-                    //string response = await SendImageMsgAsync(sQuestion, "png", base64Image);
-                    string response = await SendMultipleImagesMsgAsync(sQuestion, "png", base64Image);
-                    await AssistantResponseWindow("Chat GPT: ", response);
-                    await Task.Delay(5000);
-                }
-
-                ckbxImageReview.IsChecked = false;
-                lblPickupFolder.Content = "";
-            }
-        }
-        */
 
         private async Task PlayMp3File(string filePath)
         {
@@ -787,6 +762,12 @@ namespace AssistantAi
 
         public async Task<string> WhisperMsgAsync(string audioFilePath, string modelName, string modelType)
         {
+            if (!AudioHasSpeech(audioFilePath))
+            {
+                await DeleteFileAsync(audioFilePath);
+                return null;
+            }
+
             string sUrl = "https://api.openai.com/v1/audio/" + modelType;
 
             using (var httpClient = new HttpClient())
@@ -823,6 +804,26 @@ namespace AssistantAi
                 {
                     await DeleteFileAsync(audioFilePath);
                 }
+            }
+        }
+
+        private bool AudioHasSpeech(string filePath)
+        {
+            using (var reader = new AudioFileReader(filePath))
+            {
+                float maxVolume = 0f;
+                float[] buffer = new float[reader.WaveFormat.SampleRate];
+                int read;
+                while ((read = reader.Read(buffer, 0, buffer.Length)) > 0)
+                {
+                    for (int n = 0; n < read; n++)
+                    {
+                        var abs = Math.Abs(buffer[n]);
+                        if (abs > maxVolume) maxVolume = abs;
+                    }
+                }
+                Console.WriteLine("Max volume: " + maxVolume);
+                return maxVolume > 0.01f; // Threshold value to be determined based on testing
             }
         }
 
@@ -1056,7 +1057,7 @@ namespace AssistantAi
             }                
         }
 
-        private async Task AssistantResponseWindow(string typeResponse, string response)
+        private async Task AssistantResponseWindow(string typeResponse, string response, bool appendToLastParagraph = false)
         {
             response = response.Trim();
 
@@ -1085,7 +1086,8 @@ namespace AssistantAi
                 else
                 {
                     // It's not code, append it as plain text
-                    AppendTextToRichTextBox(typeResponse + " " + response);
+                    //AppendTextToRichTextBox(typeResponse + " " + response);
+                    AppendTextToRichTextBox(typeResponse + " " + response, false, true);
                 }
 
                 txtAssistantResponse.ScrollToEnd();
@@ -1134,10 +1136,27 @@ namespace AssistantAi
             }
         }
 
-        //This is incomplete
-        private void AppendTextToRichTextBox(string text, bool isCodeBlock = false)
+        private void AppendTextToRichTextBox(string text, bool isCodeBlock = false, bool appendToLastParagraph = false)
         {
-            Paragraph paragraph = new Paragraph();
+            Paragraph paragraph;
+
+            // Determine whether to add a new paragraph or append to the last
+            if (appendToLastParagraph && txtAssistantResponse.Document.Blocks.Count > 0)
+            {
+                // Get the last block in the document if it's a paragraph
+                paragraph = txtAssistantResponse.Document.Blocks.LastBlock as Paragraph;
+                if (paragraph == null)
+                {
+                    paragraph = new Paragraph();
+                    txtAssistantResponse.Document.Blocks.Add(paragraph);
+                }
+            }
+            else
+            {
+                // Create a new paragraph for new thoughts or separated sections
+                paragraph = new Paragraph();
+                txtAssistantResponse.Document.Blocks.Add(paragraph);
+            }
 
             if (isCodeBlock)
             {
@@ -1146,13 +1165,10 @@ namespace AssistantAi
                 paragraph.Padding = new Thickness(5);
                 HighlightCode(paragraph, text);
             }
-
             else
             {
                 paragraph.Inlines.Add(new Run(text));
             }
-
-            txtAssistantResponse.Document.Blocks.Add(paragraph);
         }
 
         //This is incomplete
@@ -1227,23 +1243,28 @@ namespace AssistantAi
         {
             btnSend.IsEnabled = false;
             btnClear.IsEnabled = false;
+            btnGetImage.IsEnabled = false;
             cmbWhisperModel.IsEnabled = false; 
             cmbAudioVoice.IsEnabled = false;
             cmbModel.IsEnabled = false;
             ckbxMute.IsEnabled = false;
-            ckbxCreateImage.IsChecked = false;
+            ckbxCreateImage.IsEnabled = false;
+            ckbxImageReview.IsEnabled = false;
+            ckbxContinuousListeningMode.IsEnabled = false;
             countdownValue = 30; // reset countdown
             ListeningModeProgressBar.Value = countdownValue; // reset progress bar
+            ListeningModeProgressBar.Maximum = countdownValue;
+            listeningMode = "Standard";
             StartAudioRecording();            
-            countdownTimer.Start(); // start countdown
-            ckbxImageReview.IsEnabled = false;
+            countdownTimer.Start(); // start countdown            
         }
 
         private async void ckbxListeningMode_Unchecked(object sender, RoutedEventArgs e)
         {
             SpinnerStatus.Visibility = Visibility.Visible;
             countdownTimer.Stop();
-            StopAudioRecording();
+            //StopAudioRecording();
+            StopAndDisposeRecorders();
             string whisperType = cmbWhisperModel.Text;
             var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", whisperType);
             if (response != null)
@@ -1296,23 +1317,129 @@ namespace AssistantAi
             ckbxMute.IsEnabled = true;
             btnSend.IsEnabled = true;
             btnClear.IsEnabled = true;
-            SpinnerStatus.Visibility = Visibility.Collapsed;
             ckbxImageReview.IsEnabled = true;
+            ckbxCreateImage.IsEnabled = true;
+            ckbxContinuousListeningMode.IsEnabled = true;
+            btnGetImage.IsEnabled = true;
+            ListeningModeProgressBar.Value = 0;
+            SpinnerStatus.Visibility = Visibility.Collapsed;            
+        }
+
+        private async void ckbxSttMode_Checked(object sender, RoutedEventArgs e)
+        {
+            DisableUI();
+            countdownValue = 5; // reset countdown
+            ListeningModeProgressBar.Value = countdownValue;
+            ListeningModeProgressBar.Maximum = countdownValue;
+            listeningMode = "Continuous";
+            audioFileQueue.Clear();
+            StartAudioRecording();
+            countdownTimer.Start(); // start countdown            
+        }
+
+        private async void ckbxSttModeMode_Unchecked(object sender, RoutedEventArgs e)
+        {
+            SpinnerStatus.Visibility = Visibility.Visible;
+            countdownTimer.Stop();
+            StopAndDisposeRecorders();
+            string whisperType = cmbWhisperModel.Text;
+            for (int i = audioFileQueue.Count - 1; i >= 0; i--)
+            {
+                string audioFile = audioFileQueue[i];
+                var response = await WhisperMsgAsync(audioFile, @"whisper-1", whisperType);
+                if (response != null)
+                {
+                    if (ckbxMute.IsChecked == true)
+                    {
+                        try
+                        {
+                            CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+                            TextInfo textInfo = cultureInfo.TextInfo;
+                            string whisperTypeString = whisperType.ToString();
+                            string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
+
+                            await AssistantResponseWindow("", response, true);
+                        }
+
+                        catch (Exception ex)
+                        {
+                            LogWriter errorLog = new LogWriter();
+                            errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                            txtAssistantResponse.AppendText("Error:\r\n" + ex.Message);
+                        }
+                    }
+
+                    else
+                    {
+
+                        try
+                        {
+                            string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                            speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                            Directory.CreateDirectory(speechDirectory);
+
+                            //string sAnswer = SendMsg(sQuestion) + "";
+                            await AssistantResponseWindow("Whisper Translate: ", response);
+                            await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
+                        }
+
+                        catch (Exception ex)
+                        {
+                            LogWriter errorLog = new LogWriter();
+                            errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                            txtAssistantResponse.AppendText("Error: " + ex.Message);
+                        }
+                    }
+                }
+
+                audioFileQueue.RemoveAt(i);
+            }
+
+            EnableUI();
+            SpinnerStatus.Visibility = Visibility.Collapsed;
+            ListeningModeProgressBar.Value = 0;
+        }
+
+        private void DisableUI()
+        {
+            btnSend.IsEnabled = false;
+            btnClear.IsEnabled = false;
+            btnGetImage.IsEnabled = false;
+            cmbWhisperModel.IsEnabled = false;
+            cmbAudioVoice.IsEnabled = false;
+            cmbModel.IsEnabled = false;
+            ckbxMute.IsEnabled = false;
+            ckbxCreateImage.IsEnabled = false;
+            ckbxImageReview.IsEnabled = false;
+            ckbxListeningMode.IsEnabled = false;
+        }
+
+        private void EnableUI()
+        {
+            btnSend.IsEnabled = true;
+            btnClear.IsEnabled = true;
+            btnGetImage.IsEnabled = true;
+            cmbWhisperModel.IsEnabled = true;
+            cmbAudioVoice.IsEnabled = true;
+            cmbModel.IsEnabled = true;
+            ckbxMute.IsEnabled = true;
+            ckbxCreateImage.IsEnabled = true;
+            ckbxImageReview.IsEnabled = true;
+            ckbxListeningMode.IsEnabled = true;
         }
 
         private void StartAudioRecording()
         {
             try
             {
-                // Generate a unique file name for each recording session
-                string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.mp3";
-                currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);
-
-                // Ensure the directory exists
+                string fileName = $"Recording_{DateTime.Now:yyyyMMddHHmmss}.wav";                
+                currentRecordingPath = Path.Combine(recordingsDirectory, fileName);
+                audioFileQueue.Add(currentRecordingPath);
                 Directory.CreateDirectory(recordingsDirectory);
 
-                // Start recording to the specified file
+                var audioRecorder = new AudioRecorder(recordingsDirectory);
                 audioRecorder.StartRecording(currentRecordingPath);
+                activeRecorders.Add(audioRecorder); // Store the recorder
             }
 
             catch (Exception ex)
@@ -1321,6 +1448,27 @@ namespace AssistantAi
                 errorLog.WriteLog(errorLogDirectory, ex.ToString());
                 System.Windows.MessageBox.Show($"An error occurred while starting recording: {ex.Message}");
             }
+        }
+
+        private void StopAndDisposeRecorders()
+        {
+            foreach (var recorder in activeRecorders)
+            {
+                try
+                {
+                    recorder.StopRecording();
+                    recorder.Dispose(); 
+                }
+
+                catch (Exception ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    System.Windows.MessageBox.Show($"An error occurred while stopping recording: {ex.Message}");
+                }
+            }
+
+            activeRecorders.Clear(); // Clear the list after stopping all recorders
         }
 
         private void ckbxCreateImage_Checked(object sender, RoutedEventArgs e)
@@ -1385,11 +1533,6 @@ namespace AssistantAi
             }
         }
 
-        private void StopAudioRecording()
-        {
-            audioRecorder.StopRecording();
-        }
-
         private void InitializeCountdownTimer()
         {
             countdownTimer = new DispatcherTimer();
@@ -1403,13 +1546,83 @@ namespace AssistantAi
             countdownValue--;
             ListeningModeProgressBar.Value = countdownValue;
 
-            if (countdownValue <= 0)
+            if (countdownValue <= 0 && listeningMode == "Standard")
             {
                 countdownTimer.Stop();
+                countdownValue = 30; // reset countdown
+                ListeningModeProgressBar.Value = countdownValue;
+                ListeningModeProgressBar.Maximum = countdownValue;
                 ckbxListeningMode.IsChecked = false; 
+            }
+
+            else if (countdownValue <= 0 && listeningMode == "Continuous")
+            {
+                countdownTimer.Stop();
+                StopAndDisposeRecorders();
+                ContinuousSST();
+                countdownValue = 5; // reset countdown
+                ListeningModeProgressBar.Value = countdownValue;
+                ListeningModeProgressBar.Maximum = countdownValue;
+                countdownTimer.Start();
+                StartAudioRecording();
             }
         }
 
+        private async Task ContinuousSST()
+        {
+            string whisperType = cmbWhisperModel.Text;
+            for (int i = 0; i <= audioFileQueue.Count - 1; i++)
+            {
+                string audioFile = audioFileQueue[i];
+                var response = await WhisperMsgAsync(audioFile, @"whisper-1", whisperType);
+                if (response != null)
+                {
+                    if (ckbxMute.IsChecked == true)
+                    {
+                        try
+                        {
+                            CultureInfo cultureInfo = CultureInfo.CurrentCulture;
+                            TextInfo textInfo = cultureInfo.TextInfo;
+                            string whisperTypeString = whisperType.ToString();
+                            string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
+
+                            await AssistantResponseWindow("", response, true);
+                        }
+
+                        catch (Exception ex)
+                        {
+                            LogWriter errorLog = new LogWriter();
+                            errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                            txtAssistantResponse.AppendText("Error:\r\n" + ex.Message);
+                        }
+                    }
+
+                    else
+                    {
+                        try
+                        {
+                            string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
+                            speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                            Directory.CreateDirectory(speechDirectory);
+
+                            //string sAnswer = SendMsg(sQuestion) + "";
+                            await AssistantResponseWindow("Whisper Translate: ", response);
+                            await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
+                        }
+
+                        catch (Exception ex)
+                        {
+                            LogWriter errorLog = new LogWriter();
+                            errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                            txtAssistantResponse.AppendText("Error: " + ex.Message);
+                        }
+                    }
+                }
+
+                audioFileQueue.RemoveAt(i);
+            }
+        }
+        
         private void cmbWhisperModel_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
             string whisperType = cmbWhisperModel.SelectedItem.ToString();

@@ -2,7 +2,7 @@
   "version": 3,
   "targets": {
     "net7.0-windows7.0": {
-      "HtmlAgilityPack/1.11.58": {
+      "HtmlAgilityPack/1.11.61": {
         "type": "package",
         "compile": {
           "lib/netstandard2.0/HtmlAgilityPack.dll": {
@@ -232,14 +232,14 @@
     }
   },
   "libraries": {
-    "HtmlAgilityPack/1.11.58": {
-      "sha512": "/LzjIKoAWdyXOn6o+zJTN2qpNIwfaDWbSQ974pVRwnzHsUFohIOSILdtkPrSO6YC38MNj4nDbpr1RkVBDE1RWQ==",
+    "HtmlAgilityPack/1.11.61": {
+      "sha512": "hqZASeEFHS9quHvfZSwaULoAJLWkOYVPiQjc3P9J4pQS8vSYzrP3bxe04Vm7vYYuxwbQhq9hCSVvZVLTyRaNaQ==",
       "type": "package",
-      "path": "htmlagilitypack/1.11.58",
+      "path": "htmlagilitypack/1.11.61",
       "files": [
         ".nupkg.metadata",
         ".signature.p7s",
-        "htmlagilitypack.1.11.58.nupkg.sha512",
+        "htmlagilitypack.1.11.61.nupkg.sha512",
         "htmlagilitypack.nuspec",
         "lib/Net35/HtmlAgilityPack.dll",
         "lib/Net35/HtmlAgilityPack.pdb",
@@ -587,7 +587,7 @@
   },
   "projectFileDependencyGroups": {
     "net7.0-windows7.0": [
-      "HtmlAgilityPack >= 1.11.58",
+      "HtmlAgilityPack >= 1.11.61",
       "NAudio >= 2.2.1",
       "Newtonsoft.Json >= 13.0.3"
     ]
@@ -644,7 +644,7 @@
         "dependencies": {
           "HtmlAgilityPack": {
             "target": "Package",
-            "version": "[1.11.58, )"
+            "version": "[1.11.61, )"
           },
           "NAudio": {
             "target": "Package",

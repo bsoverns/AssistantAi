@@ -98,7 +98,7 @@ namespace AssistantAi.Class
                 fs.Close();
             }
 
-            catch //(IOException ex)
+            catch
             {
                 Locked = true;
             }
