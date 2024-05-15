@@ -104,7 +104,10 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<string> models = new List<string>() { "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-3.5-turbo-1106", "gpt-4" }; //These seem broken in the program, "gpt-4-32k" };
+        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o" }; //These seem broken in the program, "gpt-4-32k" };
+        List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
+        List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd" }; //future use
+        List<string> whisperVoices = new List<string>() { "alloy", "echo", "fable", "onyx", "nova", "shimmer" };
         List<string> audioFileQueue = new List<string>();
 
         private List<AudioRecorder> activeRecorders = new List<AudioRecorder>();
@@ -126,9 +129,13 @@ namespace AssistantAi
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
             defaultChatGptModel = @"gpt-3.5-turbo",
-            defaultWhisperModel = @"transcriptions",
-            defaultAudioVoice = @"onyx", 
-            defaultImageModel = @"gpt-4-vision-preview",
+            defaultWhisperEndPoint = @"transcriptions",
+            defaultWhisperModel = @"whisper-1",
+            defaultAudioVoice = @"onyx",
+            defaultImageModel = @"gpt-4-turbo", // @"gpt-4-vision-preview",
+            defaultTTSModel = @"tts-1",
+            defaultDallesModel = @"dall-e-3",
+            defaultDallesSize = @"1024x1024",
             recordingsDirectory,
             currentRecordingPath, 
             speechDirectory,
@@ -461,7 +468,7 @@ namespace AssistantAi
             string sModel = cmbModel.Text;
             string sUrl = "https://api.openai.com/v1/completions";
 
-            if (models.Any(sub => sModel.Contains(sub)))
+            if (gptModels.Any(sub => sModel.Contains(sub)))
             {
                 sUrl = "https://api.openai.com/v1/chat/completions";
             }
@@ -471,7 +478,7 @@ namespace AssistantAi
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
 
                 object payload;
-                if (models.Any(sub => sModel.Contains(sub)))
+                if (gptModels.Any(sub => sModel.Contains(sub)))
                 {
                     payload = new
                     {
@@ -507,7 +514,7 @@ namespace AssistantAi
                     var oChoice = (JObject)oChoices[0]; // Changed to JObject
                     string sResponse = "";
 
-                    if (models.Any(sub => sModel.Contains(sub)))
+                    if (gptModels.Any(sub => sModel.Contains(sub)))
                     {
                         var oMessage = (JObject)oChoice["message"];
                         sResponse = (string)oMessage["content"];
@@ -541,7 +548,7 @@ namespace AssistantAi
 
                 var payload = new
                 {
-                    model = "tts-1",
+                    model = defaultTTSModel,
                     input = textToConvert,
                     voice = voiceModel
                 };
@@ -867,10 +874,10 @@ namespace AssistantAi
 
                 var payload = new
                 {
-                    model = "dall-e-3",
+                    model = defaultDallesModel,
                     prompt = prompt,
                     n = 1,
-                    size = "1024x1024"
+                    size = defaultDallesSize
                 };
 
                 var jsonPayload = JsonConvert.SerializeObject(payload);
@@ -963,25 +970,24 @@ namespace AssistantAi
 
             // Add items to cmbModel
             // https://platform.openai.com/docs/guides/text-generation
-            cmbModel.Items.Add("gpt-3.5-turbo"); //4,097 tokens	Up to Sep 2021
-            cmbModel.Items.Add("gpt-3.5-turbo-16k"); //16,385 tokens	Up to Sep 2021
-            cmbModel.Items.Add("gpt-3.5-turbo-1106");
-            cmbModel.Items.Add("gpt-4"); //8,192 tokens	Up to Sep 2021
-            //cmbModel.Items.Add("gpt-4-32k"); //32,768 tokens	Up to Sep 2021        
+            foreach (var model in gptModels)
+            {
+                cmbModel.Items.Add(model);
+            }      
 
             // Add items to cmbWhisperModel
             // https://platform.openai.com/docs/guides/speech-to-text
-            cmbWhisperModel.Items.Add("transcriptions");
-            cmbWhisperModel.Items.Add("translations");
+            foreach (var model in whisperEndPoints)
+            {
+                cmbWhisperModel.Items.Add(model);
+            }            
 
             // Adds audio voices currently active
             // https://platform.openai.com/docs/guides/text-to-speech
-            cmbAudioVoice.Items.Add("alloy");
-            cmbAudioVoice.Items.Add("echo");
-            cmbAudioVoice.Items.Add("fable");
-            cmbAudioVoice.Items.Add("onyx");
-            cmbAudioVoice.Items.Add("nova");
-            cmbAudioVoice.Items.Add("shimmer");
+            foreach (var voice in whisperVoices)
+            {
+                cmbAudioVoice.Items.Add(voice);
+            }
 
             // Set text for txtMaxTokens
             txtMaxTokens.Text = "2048";
@@ -994,7 +1000,7 @@ namespace AssistantAi
 
             // Select default items by value
             cmbModel.SelectedItem = defaultChatGptModel;
-            cmbWhisperModel.SelectedItem = defaultWhisperModel;
+            cmbWhisperModel.SelectedItem = defaultWhisperEndPoint;
             cmbAudioVoice.SelectedItem = defaultAudioVoice;            
 
             // Set colors and fonts for txtQuestion
@@ -1266,7 +1272,7 @@ namespace AssistantAi
             //StopAudioRecording();
             StopAndDisposeRecorders();
             string whisperType = cmbWhisperModel.Text;
-            var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", whisperType);
+            var response = await WhisperMsgAsync(currentRecordingPath, defaultWhisperModel, whisperType);
             if (response != null)
             {               
                 if (ckbxMute.IsChecked == true)
@@ -1346,7 +1352,7 @@ namespace AssistantAi
             for (int i = audioFileQueue.Count - 1; i >= 0; i--)
             {
                 string audioFile = audioFileQueue[i];
-                var response = await WhisperMsgAsync(audioFile, @"whisper-1", whisperType);
+                var response = await WhisperMsgAsync(audioFile, defaultWhisperModel, whisperType);
                 if (response != null)
                 {
                     if (ckbxMute.IsChecked == true)
@@ -1371,7 +1377,6 @@ namespace AssistantAi
 
                     else
                     {
-
                         try
                         {
                             string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
@@ -1574,7 +1579,7 @@ namespace AssistantAi
             for (int i = 0; i <= audioFileQueue.Count - 1; i++)
             {
                 string audioFile = audioFileQueue[i];
-                var response = await WhisperMsgAsync(audioFile, @"whisper-1", whisperType);
+                var response = await WhisperMsgAsync(audioFile, defaultWhisperModel, whisperType);
                 if (response != null)
                 {
                     if (ckbxMute.IsChecked == true)
@@ -1605,8 +1610,7 @@ namespace AssistantAi
                             speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
                             Directory.CreateDirectory(speechDirectory);
 
-                            //string sAnswer = SendMsg(sQuestion) + "";
-                            await AssistantResponseWindow("Whisper Translate: ", response);
+                            await AssistantResponseWindow("", response, true);
                             await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
                         }
 
