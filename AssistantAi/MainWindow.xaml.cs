@@ -104,7 +104,7 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o" }; //These seem broken in the program, "gpt-4-32k" };
+        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //These seem broken in the program, "gpt-4-32k" };
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
         List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd" }; //future use
         List<string> whisperVoices = new List<string>() { "alloy", "echo", "fable", "onyx", "nova", "shimmer" };
@@ -128,7 +128,7 @@ namespace AssistantAi
 
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
-            defaultChatGptModel = @"gpt-3.5-turbo",
+            defaultChatGptModel = @"gpt-4o",
             defaultWhisperEndPoint = @"transcriptions",
             defaultWhisperModel = @"whisper-1",
             defaultAudioVoice = @"onyx",
@@ -322,7 +322,7 @@ namespace AssistantAi
             }
 
             //txtAssistantResponse.AppendText("Me: " + sQuestion);
-            await AssistantResponseWindow("Me: ", sQuestion);
+            await AssistantResponseWindow("\r\nMe: ", sQuestion);
             txtQuestion.Text = "";
 
             if (ckbxCreateImage.IsChecked == true)
@@ -335,7 +335,7 @@ namespace AssistantAi
                     string fileName = $"DALLE_{DateTime.Now:yyyyMMddHHmmss}.png";
                     currentImageCreationFilePath = System.IO.Path.Combine(imageCreationDirectory, fileName);
                     await GenerateImageAsync(sQuestion, currentImageCreationFilePath);
-                    await AssistantResponseWindow("DALL-e: ", @"Below is an image located under: " + currentImageCreationFilePath.ToString() + "\r\n");
+                    await AssistantResponseWindow("\r\nDALL-e: ", @"Below is an image located under: " + currentImageCreationFilePath.ToString() + "\r\n");
                     await AssistantResponseWindowImageAdd(currentImageCreationFilePath);
                 }
 
@@ -343,7 +343,7 @@ namespace AssistantAi
                 {
                     LogWriter errorLog = new LogWriter();
                     errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                    txtAssistantResponse.AppendText("Error: " + ex.Message);
+                    txtAssistantResponse.AppendText("\r\nError: " + ex.Message);
                 }
 
                 finally
@@ -370,7 +370,7 @@ namespace AssistantAi
                 {
                     LogWriter errorLog = new LogWriter();
                     errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                    txtAssistantResponse.AppendText("Error: " + ex.Message);
+                    txtAssistantResponse.AppendText("\r\nError: " + ex.Message);
                 }
 
                 finally
@@ -388,14 +388,14 @@ namespace AssistantAi
                         SpinnerStatus.Visibility = Visibility.Visible;
                         string base64Image = EncodeImageToBase64(currentImageFilePath); // Provide the correct path
                         string sAnswer = await SendImageMsgAsync(sQuestion, "jpeg", int.Parse(txtMaxTokens.Text), base64Image);
-                        await AssistantResponseWindow("Chat GPT: ", sAnswer);
+                        await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
                     }
 
                     catch (Exception ex)
                     {
                         LogWriter errorLog = new LogWriter();
                         errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                        txtAssistantResponse.AppendText("\r\nError: " + ex.Message);
                     }
 
                     finally
@@ -416,7 +416,7 @@ namespace AssistantAi
                         SpinnerStatus.Visibility = Visibility.Visible;
                         //string sAnswer = SendMsg(sQuestion) + "";
                         string sAnswer = await SendMsgAsync(sQuestion) + "";
-                        await AssistantResponseWindow("Chat GPT: ", sAnswer);
+                        await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
                         //txtAssistantResponse.AppendText("\r\nChat GPT: " + sAnswer.Replace("\n", "\r\n").Trim() + "\r\n");                
                     }
 
@@ -424,7 +424,7 @@ namespace AssistantAi
                     {
                         LogWriter errorLog = new LogWriter();
                         errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                        txtAssistantResponse.AppendText("\r\nError: " + ex.Message);
                     }
 
                     finally
@@ -445,7 +445,7 @@ namespace AssistantAi
 
                     //string sAnswer = SendMsg(sQuestion) + "";
                     string sAnswer = await SendMsgAsync(sQuestion) + "";
-                    await AssistantResponseWindow("Chat GPT: ", sAnswer);
+                    await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
                     await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudioVoice.SelectedItem.ToString());
                 }
 
@@ -453,7 +453,7 @@ namespace AssistantAi
                 {
                     LogWriter errorLog = new LogWriter();
                     errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                    txtAssistantResponse.AppendText("Error: " + ex.Message);
+                    txtAssistantResponse.AppendText("\r\nError: " + ex.Message);
                 }
 
                 finally
@@ -591,6 +591,12 @@ namespace AssistantAi
                 return "";
             }
 
+            string sModel = cmbModel.Text;
+            if (sModel != "gpt-4o" || sModel != "gpt-4o-mini")
+            {
+                sModel = defaultImageModel;
+            }                          
+
             // Set up HttpClient
             using (var httpClient = new HttpClient())
             {
@@ -600,7 +606,7 @@ namespace AssistantAi
                 // Payload
                 var payload = new
                 {
-                    model = defaultImageModel, // Make sure this is set to your image model
+                    model = sModel, // Make sure this is set to your image model
                     messages = new[]
                     {
                         new
@@ -1108,7 +1114,7 @@ namespace AssistantAi
             }
         }
 
-        //This is messy but it works, needs refined
+        //This is messy but it works most of the time, needs refined
         private async Task AssistantResponseWindowImageAdd(string fileLocation)
         {
             try
@@ -1284,14 +1290,14 @@ namespace AssistantAi
                         string whisperTypeString = whisperType.ToString(); // Assume whisperType is an enum or similar
                         string properCase = textInfo.ToTitleCase(whisperTypeString.ToLower());
 
-                        await AssistantResponseWindow("Whisper " + properCase + ":\r\n ", response);
+                        await AssistantResponseWindow("\r\nWhisper " + properCase + ":\r\n ", response);
                     }
 
                     catch (Exception ex)
                     {
                         LogWriter errorLog = new LogWriter();
                         errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                        txtAssistantResponse.AppendText("Error:\r\n" + ex.Message);
+                        txtAssistantResponse.AppendText("\r\nError:\r\n" + ex.Message);
                     }
                 }
 
@@ -1304,7 +1310,7 @@ namespace AssistantAi
                         Directory.CreateDirectory(speechDirectory);
 
                         //string sAnswer = SendMsg(sQuestion) + "";
-                        await AssistantResponseWindow("Whisper Translate: ", response);
+                        await AssistantResponseWindow("\r\nWhisper Translate: ", response);
                         await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
                     }
 
@@ -1312,7 +1318,7 @@ namespace AssistantAi
                     {
                         LogWriter errorLog = new LogWriter();
                         errorLog.WriteLog(errorLogDirectory, ex.ToString());
-                        txtAssistantResponse.AppendText("Error: " + ex.Message);
+                        txtAssistantResponse.AppendText("\r\nError: " + ex.Message);
                     }
                 }
             }
