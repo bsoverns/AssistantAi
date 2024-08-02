@@ -104,7 +104,7 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o" }; //These seem broken in the program, "gpt-4-32k" };
+        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //These seem broken in the program, "gpt-4-32k" };
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
         List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd" }; //future use
         List<string> whisperVoices = new List<string>() { "alloy", "echo", "fable", "onyx", "nova", "shimmer" };
@@ -128,7 +128,7 @@ namespace AssistantAi
 
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
-            defaultChatGptModel = @"gpt-3.5-turbo",
+            defaultChatGptModel = @"gpt-4o",
             defaultWhisperEndPoint = @"transcriptions",
             defaultWhisperModel = @"whisper-1",
             defaultAudioVoice = @"onyx",
@@ -335,7 +335,7 @@ namespace AssistantAi
                     string fileName = $"DALLE_{DateTime.Now:yyyyMMddHHmmss}.png";
                     currentImageCreationFilePath = System.IO.Path.Combine(imageCreationDirectory, fileName);
                     await GenerateImageAsync(sQuestion, currentImageCreationFilePath);
-                    await AssistantResponseWindow("DALL-e: ", @"Below is an image located under: " + currentImageCreationFilePath.ToString() + "\r\n");
+                    await AssistantResponseWindow("\r\nDALL-e: ", @"Below is an image located under: " + currentImageCreationFilePath.ToString() + "\r\n");
                     await AssistantResponseWindowImageAdd(currentImageCreationFilePath);
                 }
 
@@ -388,7 +388,7 @@ namespace AssistantAi
                         SpinnerStatus.Visibility = Visibility.Visible;
                         string base64Image = EncodeImageToBase64(currentImageFilePath); // Provide the correct path
                         string sAnswer = await SendImageMsgAsync(sQuestion, "jpeg", int.Parse(txtMaxTokens.Text), base64Image);
-                        await AssistantResponseWindow("Chat GPT: ", sAnswer);
+                        await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
                     }
 
                     catch (Exception ex)
@@ -591,6 +591,12 @@ namespace AssistantAi
                 return "";
             }
 
+            string sModel = cmbModel.Text;
+            if (sModel != "gpt-4o" || sModel != "gpt-4o-mini")
+            {
+                sModel = defaultImageModel;
+            }                          
+
             // Set up HttpClient
             using (var httpClient = new HttpClient())
             {
@@ -600,7 +606,7 @@ namespace AssistantAi
                 // Payload
                 var payload = new
                 {
-                    model = defaultImageModel, // Make sure this is set to your image model
+                    model = sModel, // Make sure this is set to your image model
                     messages = new[]
                     {
                         new
