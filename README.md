@@ -6,7 +6,7 @@ AssistantAi is a WPF application designed for interactive communication with Ope
 
 AssistantAi offers a versatile range of functionalities, including:
 
-1. Interaction with OpenAI's ChatGPT models (3.5 and 4).
+1. Interaction with OpenAI's ChatGPT models (3.5, 4, 4o, and 4o mini).
 2. Usage of Whisper for transcription, translation, and speech processing.
 3. Integration with OpenAI's Vision capabilities.
 4. Ability to generate images using OpenAI's DALL-E.
