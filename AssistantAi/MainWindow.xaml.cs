@@ -409,6 +409,33 @@ namespace AssistantAi
                     }
                 }
 
+                else if (ckbxTts.IsChecked == true)
+                {
+                    try
+                    {
+                        SpinnerStatus.Visibility = Visibility.Visible;
+                        string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.mp3";
+                        speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                        Directory.CreateDirectory(speechDirectory);
+
+                        //string sAnswer = SendMsg(sQuestion) + "";
+                        //string sAnswer = await SendMsgAsync(sQuestion) + "";
+                        await WhisperTextToSpeechAsync(speechRecordingPath, sQuestion, cmbAudioVoice.SelectedItem.ToString());
+                    }
+
+                    catch (Exception ex)
+                    {
+                        LogWriter errorLog = new LogWriter();
+                        errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                        txtAssistantResponse.AppendText("\r\nError: " + ex.Message);
+                    }
+
+                    finally
+                    {
+                        SpinnerStatus.Visibility = Visibility.Collapsed;
+                    }
+                }
+
                 else
                 {
                     try
@@ -1260,6 +1287,7 @@ namespace AssistantAi
             cmbAudioVoice.IsEnabled = false;
             cmbModel.IsEnabled = false;
             ckbxMute.IsEnabled = false;
+            ckbxTts.IsEnabled = false;
             ckbxCreateImage.IsEnabled = false;
             ckbxImageReview.IsEnabled = false;
             ckbxContinuousListeningMode.IsEnabled = false;
@@ -1327,6 +1355,7 @@ namespace AssistantAi
             cmbAudioVoice.IsEnabled = true;
             cmbModel.IsEnabled = true;
             ckbxMute.IsEnabled = true;
+            ckbxTts.IsEnabled = true;
             btnSend.IsEnabled = true;
             btnClear.IsEnabled = true;
             ckbxImageReview.IsEnabled = true;
@@ -1420,6 +1449,7 @@ namespace AssistantAi
             cmbAudioVoice.IsEnabled = false;
             cmbModel.IsEnabled = false;
             ckbxMute.IsEnabled = false;
+            ckbxTts.IsEnabled = false;
             ckbxCreateImage.IsEnabled = false;
             ckbxImageReview.IsEnabled = false;
             ckbxListeningMode.IsEnabled = false;
@@ -1434,6 +1464,7 @@ namespace AssistantAi
             cmbAudioVoice.IsEnabled = true;
             cmbModel.IsEnabled = true;
             ckbxMute.IsEnabled = true;
+            ckbxTts.IsEnabled = true;
             ckbxCreateImage.IsEnabled = true;
             ckbxImageReview.IsEnabled = true;
             ckbxListeningMode.IsEnabled = true;
@@ -1487,18 +1518,24 @@ namespace AssistantAi
             if (ckbxMute.IsChecked == false || ckbxListeningMode.IsChecked == true)
             {
                 ckbxMute.IsChecked = true;
+                ckbxTts.IsChecked = true;
                 ckbxListeningMode.IsChecked = false;
+                ckbxContinuousListeningMode.IsChecked = false;
                 ckbxImageReview.IsEnabled = false;
             }
 
             ckbxMute.IsEnabled = false;
+            ckbxTts.IsEnabled = false;
             ckbxListeningMode.IsEnabled = false;
+            ckbxContinuousListeningMode.IsEnabled = false;
         }
 
         private void ckbxCreateImage_Unchecked(object sender, RoutedEventArgs e)
         {
             ckbxMute.IsEnabled = true;
+            ckbxTts.IsEnabled = true;
             ckbxListeningMode.IsEnabled = true;
+            ckbxContinuousListeningMode.IsEnabled = true;
             ckbxImageReview.IsEnabled = true;
         }
 
@@ -1519,7 +1556,31 @@ namespace AssistantAi
             btnPickupFolder.IsEnabled = false;
             RemoveInstructionalText();
         }
-  
+
+        private void ckbxMute_Checked(object sender, RoutedEventArgs e)
+        {
+            ckbxTts.IsEnabled = false;
+        }
+
+        private void ckbxMute_Unchecked(object sender, RoutedEventArgs e)
+        {
+            ckbxTts.IsEnabled = true;
+        }
+
+        private void ckbxckbxTts_Checked(object sender, RoutedEventArgs e)
+        {
+            ckbxMute.IsEnabled = false;
+            ckbxListeningMode.IsEnabled = false;
+            ckbxContinuousListeningMode.IsEnabled = false;          
+        }
+
+        private void ckbxckbxTts_Unchecked(object sender, RoutedEventArgs e)
+        {
+            ckbxMute.IsEnabled = true;
+            ckbxListeningMode.IsEnabled = true;
+            ckbxContinuousListeningMode.IsEnabled = true;
+        }
+
         private void AddInstructionalText()
         {
             string sText = instructionalText;
