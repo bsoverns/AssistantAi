@@ -57,6 +57,7 @@
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
                         </Grid.ColumnDefinitions>
 
                         <Button Name="btnSend" Content="Send" Grid.Column="0" Click="OnSendButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
@@ -65,7 +66,8 @@
                         <local:Spinner x:Name="SpinnerStatus" HorizontalAlignment="Left" VerticalAlignment="Bottom" Grid.Column="4" Height="24" Width="24" Margin="8,8,0,0" Visibility="Collapsed"/>
                         <Label Content="Voice Model" Grid.Column="5" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <ComboBox Name="cmbAudioVoice" Grid.Column="6" Grid.ColumnSpan="2"  Margin="8,8,0,0" />
-                        <CheckBox Name="ckbxMute" Content="Mute Voice" Grid.Column="8" Margin="8,8,0,0" VerticalAlignment="Center"/>
+                        <CheckBox Name="ckbxMute" Content="Mute Voice" Grid.Column="8" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxMute_Checked" Unchecked="ckbxMute_Unchecked"/>
+                        <CheckBox Name="ckbxTts" Content="Text To Speech Only" Grid.Column="9" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxckbxTts_Checked" Unchecked="ckbxckbxTts_Unchecked"/>
                     </Grid>
 
                     <!-- Second set of controls -->
