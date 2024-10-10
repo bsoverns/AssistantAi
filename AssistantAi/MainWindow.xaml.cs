@@ -105,7 +105,8 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini", "o1-preview", "o1-mini" }; //These seem broken in the program, "gpt-4-32k" };
+        //List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini", "o1-preview", "o1-mini" }; //These seem broken in the program, "gpt-4-32k" };
+        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //o1 models are not available yet.
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
         List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd" }; //future use
         List<string> whisperVoices = new List<string>() { "alloy", "echo", "fable", "onyx", "nova", "shimmer" };
@@ -443,17 +444,17 @@ namespace AssistantAi
                     {
                         SpinnerStatus.Visibility = Visibility.Visible;
                         //string sAnswer = SendMsg(sQuestion) + "";
-                        if (cmbModel.Text == "o1-preview" || cmbModel.Text == "o1-mini")
-                        {
-                            string sAnswer = await SendMsgAsyncReasoning(sQuestion) + "";
-                            await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
-                        }
+                        //if (cmbModel.Text == "o1-preview" || cmbModel.Text == "o1-mini")
+                        //{
+                        //    string sAnswer = await SendMsgAsyncReasoning(sQuestion) + "";
+                        //    await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
+                        //}
 
-                        else
-                        {
+                        //else
+                        //{
                             string sAnswer = await SendMsgAsync(sQuestion) + "";
                             await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
-                        }
+                        //}
                         //txtAssistantResponse.AppendText("\r\nChat GPT: " + sAnswer.Replace("\n", "\r\n").Trim() + "\r\n");                
                     }
 
@@ -561,74 +562,6 @@ namespace AssistantAi
                     {
                         sResponse = (string)oChoice["text"];
                     }
-
-                    return sResponse.Trim();
-                }
-
-                catch (HttpRequestException ex)
-                {
-                    LogWriter errorLog = new LogWriter();
-                    errorLog.WriteLog(errorLogDirectory, sQuestion + ":\r\n " + ex.ToString());
-                    Console.WriteLine($"Request exception: {ex.Message}");
-                    return "";
-                }
-            }
-        }
-
-        //Adding reasoning here; currently not working
-        public async Task<string> SendMsgAsyncReasoning(string sQuestion)
-        {
-            string sModel = "o1-preview"; // cmbModel.Text;
-            string sUrl = "https://api.openai.com/v1/completions";
-
-            if (gptModels.Any(sub => sModel.Contains(sub)))
-            {
-                sUrl = "https://api.openai.com/v1/chat/completions";
-            }
-
-            using (var httpClient = new HttpClient())
-            {
-                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
-
-                object payload;
-                //if (gptModels.Any(sub => sModel.Contains(sub)))
-                //{
-                    payload = new
-                    {
-                        model = sModel,
-                        messages = new[] { new { role = "user", content = PadInput(sQuestion) } }
-                    };
-                //}
-                //else
-                //{
-                //    payload = new
-                //    {
-                //        model = sModel,
-                //        prompt = PadInput(sQuestion),
-                //        max_tokens = int.Parse(txtMaxTokens.Text),
-                //        temperature = double.Parse(txtTemperature.Text),
-                //        // Other parameters if needed
-                //    };
-                //}
-
-                var data = JsonConvert.SerializeObject(payload);
-                var content = new StringContent(data, Encoding.UTF8, "application/json");
-
-                try
-                {
-                    var response = await httpClient.PostAsync(sUrl, content);
-                    response.EnsureSuccessStatusCode();
-
-                    var sJson = await response.Content.ReadAsStringAsync();
-
-                    // Deserialize the JSON response
-                    var oJson = JsonConvert.DeserializeObject<Dictionary<string, object>>(sJson);
-                    var oChoices = (JArray)oJson["choices"]; // Changed to JArray
-                    var oChoice = (JObject)oChoices[0]; // Changed to JObject
-                    var oMessage = (JObject)oChoice["message"];
-                    //OLD
-                    //string sResponse = "";
-                    string sResponse = (string)oMessage["content"];
 
                     return sResponse.Trim();
                 }
