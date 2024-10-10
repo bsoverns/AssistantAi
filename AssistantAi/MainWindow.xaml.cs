@@ -29,7 +29,8 @@ using NAudio.Wave;
 
 namespace AssistantAi
 {
-    #region COSTS
+    //Not Updated
+    #region COSTS 
 
     /* Notes on prices 02/10/2024
     https://openai.com/pricing#language-models
@@ -104,7 +105,8 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //These seem broken in the program, "gpt-4-32k" };
+        //List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini", "o1-preview", "o1-mini" }; //These seem broken in the program, "gpt-4-32k" };
+        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //o1 models are not available yet.
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
         List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd" }; //future use
         List<string> whisperVoices = new List<string>() { "alloy", "echo", "fable", "onyx", "nova", "shimmer" };
@@ -442,8 +444,17 @@ namespace AssistantAi
                     {
                         SpinnerStatus.Visibility = Visibility.Visible;
                         //string sAnswer = SendMsg(sQuestion) + "";
-                        string sAnswer = await SendMsgAsync(sQuestion) + "";
-                        await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
+                        //if (cmbModel.Text == "o1-preview" || cmbModel.Text == "o1-mini")
+                        //{
+                        //    string sAnswer = await SendMsgAsyncReasoning(sQuestion) + "";
+                        //    await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
+                        //}
+
+                        //else
+                        //{
+                            string sAnswer = await SendMsgAsync(sQuestion) + "";
+                            await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
+                        //}
                         //txtAssistantResponse.AppendText("\r\nChat GPT: " + sAnswer.Replace("\n", "\r\n").Trim() + "\r\n");                
                     }
 
