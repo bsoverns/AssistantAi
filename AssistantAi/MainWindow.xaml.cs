@@ -766,7 +766,7 @@ namespace AssistantAi
             if (Directory.Exists(fileLocation))
             {
                 string response = await SendMultipleImagesMsgAsync(sQuestion, "png", fileLocation, maxTokens);
-                await AssistantResponseWindow("Chat GPT: ", response);
+                await AssistantResponseWindow("\r\nChat GPT: ", response);
                 await Task.Delay(5000);                            
                 
                 ckbxImageReview.IsChecked = false;                
