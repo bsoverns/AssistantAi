@@ -1,13 +1,13 @@
 {
   "Version": 1,
-  "WorkspaceRootPath": "D:\\Sandbox\\AssistantAi\\",
+  "WorkspaceRootPath": "C:\\Sandbox\\AssistantAi\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|d:\\sandbox\\assistantai\\assistantai\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "AbsoluteMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|c:\\sandbox\\assistantai\\assistantai\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|solutionrelative:assistantai\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|d:\\sandbox\\assistantai\\assistantai\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "AbsoluteMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|c:\\sandbox\\assistantai\\assistantai\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
       "RelativeMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|solutionrelative:assistantai\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     }
   ],
@@ -18,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 3,
+          "SelectedChildIndex": 2,
           "Children": [
             {
               "$type": "Bookmark",
@@ -29,16 +29,12 @@
               "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
             },
             {
-              "$type": "Bookmark",
-              "Name": "ST:0:0:{004be353-6879-467c-9d1e-9ac23cdf6d49}"
-            },
-            {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "MainWindow.xaml.cs",
-              "DocumentMoniker": "D:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
+              "DocumentMoniker": "C:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
               "RelativeDocumentMoniker": "AssistantAi\\MainWindow.xaml.cs",
-              "ToolTip": "D:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
               "RelativeToolTip": "AssistantAi\\MainWindow.xaml.cs",
               "ViewState": "AgIAAAAAAAAAAAAAAAAAAOUBAABAAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
@@ -49,9 +45,9 @@
               "$type": "Document",
               "DocumentIndex": 1,
               "Title": "MainWindow.xaml",
-              "DocumentMoniker": "D:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml",
+              "DocumentMoniker": "C:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml",
               "RelativeDocumentMoniker": "AssistantAi\\MainWindow.xaml",
-              "ToolTip": "D:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml",
+              "ToolTip": "C:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml",
               "RelativeToolTip": "AssistantAi\\MainWindow.xaml",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
               "WhenOpened": "2024-09-10T19:36:44.067Z"
