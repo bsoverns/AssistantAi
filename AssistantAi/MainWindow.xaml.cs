@@ -105,8 +105,8 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        //List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini", "o1-preview", "o1-mini" }; //These seem broken in the program, "gpt-4-32k" };
-        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //o1 models are not available yet.
+        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini", "o1-preview", "o1-mini" }; //These seem broken in the program, "gpt-4-32k" };
+        //List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //o1 models are not available yet.
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
         List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd" }; //future use
         List<string> whisperVoices = new List<string>() { "alloy", "echo", "fable", "onyx", "nova", "shimmer" };
