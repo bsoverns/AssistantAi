@@ -18,7 +18,7 @@
       "DocumentGroups": [
         {
           "DockedWidth": 200,
-          "SelectedChildIndex": 2,
+          "SelectedChildIndex": 3,
           "Children": [
             {
               "$type": "Bookmark",
@@ -29,6 +29,10 @@
               "Name": "ST:0:0:{34e76e81-ee4a-11d0-ae2e-00a0c90fffc3}"
             },
             {
+              "$type": "Bookmark",
+              "Name": "ST:0:0:{004be353-6879-467c-9d1e-9ac23cdf6d49}"
+            },
+            {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "MainWindow.xaml.cs",
@@ -36,7 +40,7 @@
               "RelativeDocumentMoniker": "AssistantAi\\MainWindow.xaml.cs",
               "ToolTip": "C:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
               "RelativeToolTip": "AssistantAi\\MainWindow.xaml.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAOUBAABAAAAAAAAAAA==",
+              "ViewState": "AgIAANsBAAAAAAAAAAAmwPgBAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2024-08-02T04:59:13.951Z",
               "EditorCaption": ""
