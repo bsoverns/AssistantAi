@@ -452,8 +452,8 @@ namespace AssistantAi
 
                         //else
                         //{
-                            string sAnswer = await SendMsgAsync(sQuestion) + "";
-                            await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
+                        string sAnswer = await SendMsgAsync(sQuestion) + "";
+                        await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
                         //}
                         //txtAssistantResponse.AppendText("\r\nChat GPT: " + sAnswer.Replace("\n", "\r\n").Trim() + "\r\n");                
                     }
@@ -472,6 +472,34 @@ namespace AssistantAi
                 }
             }
 
+            else if (ckbxTts.IsChecked == true)
+            {
+                try
+                {
+                    SpinnerStatus.Visibility = Visibility.Visible;
+                    string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.mp3";
+                    speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
+                    Directory.CreateDirectory(speechDirectory);
+                                        
+                    string sAnswer = sQuestion + "";
+                    await AssistantResponseWindow("\r\nChat GPT Should be repeating this phrase: ", sAnswer);
+                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudioVoice.SelectedItem.ToString());
+                }
+
+                catch (Exception ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, ex.ToString());
+                    txtAssistantResponse.AppendText("\r\nError: " + ex.Message);
+                }
+
+                finally
+                {
+                    SpinnerStatus.Visibility = Visibility.Collapsed;
+                }
+            }
+
+            //Code below is not quite complete, so it may never be reached
             else
             {
                 try
