@@ -114,7 +114,7 @@
                         <TextBox Name="txtUserId" Grid.Column="1" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
                         <Label Content="Max Tokens" Grid.Column="2" Margin="8,8,0,0" HorizontalAlignment="Right"/>
                         <TextBox Name="txtMaxTokens" Grid.Column="3" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
-                        <Label Content="Record Max 30 Seconds" Grid.Column="4" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Right" />
+                        <Label Name="lblRecordLength"  Content="Record Timer" Grid.Column="4" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Right" />
                         <StatusBar Grid.Column="6" Grid.ColumnSpan="2" Margin="8,8,0,0" HorizontalAlignment="Stretch" VerticalAlignment="Bottom">
                             <StatusBarItem>
                                 <ProgressBar Name="ListeningModeProgressBar" Width="175" Height="20" Minimum="0" Maximum="100"/>
