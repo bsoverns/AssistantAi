@@ -26,6 +26,7 @@ using System.Text.RegularExpressions;
 using System.Net.NetworkInformation;
 using System.Diagnostics.Tracing;
 using NAudio.Wave;
+using System.Windows.Media.Media3D;
 
 namespace AssistantAi
 {
@@ -1319,12 +1320,14 @@ namespace AssistantAi
 
         private async void ckbxListeningMode_Checked(object sender, RoutedEventArgs e)
         {
+            lblRecordLength.Content = "Record Max 30 Seconds";
             btnSend.IsEnabled = false;
             btnClear.IsEnabled = false;
             btnGetImage.IsEnabled = false;
             cmbWhisperModel.IsEnabled = false; 
             cmbAudioVoice.IsEnabled = false;
             cmbModel.IsEnabled = false;
+            ckbxMute.IsChecked = true;
             ckbxMute.IsEnabled = false;
             ckbxTts.IsEnabled = false;
             ckbxCreateImage.IsEnabled = false;
@@ -1393,8 +1396,7 @@ namespace AssistantAi
             cmbWhisperModel.IsEnabled = true;
             cmbAudioVoice.IsEnabled = true;
             cmbModel.IsEnabled = true;
-            ckbxMute.IsEnabled = true;
-            ckbxTts.IsEnabled = true;
+            ckbxMute.IsEnabled = true;           
             btnSend.IsEnabled = true;
             btnClear.IsEnabled = true;
             ckbxImageReview.IsEnabled = true;
@@ -1402,11 +1404,13 @@ namespace AssistantAi
             ckbxContinuousListeningMode.IsEnabled = true;
             btnGetImage.IsEnabled = true;
             ListeningModeProgressBar.Value = 0;
-            SpinnerStatus.Visibility = Visibility.Collapsed;            
+            SpinnerStatus.Visibility = Visibility.Collapsed;
+            lblRecordLength.Content = "Record Timer";
         }
 
         private async void ckbxSttMode_Checked(object sender, RoutedEventArgs e)
         {
+            lblRecordLength.Content = "Loop Records Every 5 Seconds";
             DisableUI();
             countdownValue = 5; // reset countdown
             ListeningModeProgressBar.Value = countdownValue;
@@ -1487,11 +1491,13 @@ namespace AssistantAi
             cmbWhisperModel.IsEnabled = false;
             cmbAudioVoice.IsEnabled = false;
             cmbModel.IsEnabled = false;
+            ckbxMute.IsChecked = true;
             ckbxMute.IsEnabled = false;
+            ckbxTts.IsChecked = false;
             ckbxTts.IsEnabled = false;
             ckbxCreateImage.IsEnabled = false;
             ckbxImageReview.IsEnabled = false;
-            ckbxListeningMode.IsEnabled = false;
+            ckbxListeningMode.IsEnabled = false;            
         }
 
         private void EnableUI()
@@ -1503,10 +1509,10 @@ namespace AssistantAi
             cmbAudioVoice.IsEnabled = true;
             cmbModel.IsEnabled = true;
             ckbxMute.IsEnabled = true;
-            ckbxTts.IsEnabled = true;
             ckbxCreateImage.IsEnabled = true;
             ckbxImageReview.IsEnabled = true;
             ckbxListeningMode.IsEnabled = true;
+            lblRecordLength.Content = "Record Timer";
         }
 
         private void StartAudioRecording()
@@ -1554,25 +1560,20 @@ namespace AssistantAi
 
         private void ckbxCreateImage_Checked(object sender, RoutedEventArgs e)
         {
-            if (ckbxMute.IsChecked == false || ckbxListeningMode.IsChecked == true)
-            {
-                ckbxMute.IsChecked = true;
-                ckbxTts.IsChecked = true;
-                ckbxListeningMode.IsChecked = false;
-                ckbxContinuousListeningMode.IsChecked = false;
-                ckbxImageReview.IsEnabled = false;
-            }
-
+            ckbxImageReview.IsEnabled = false;
+            ckbxMute.IsChecked = true;
             ckbxMute.IsEnabled = false;
+            ckbxTts.IsChecked = false;
             ckbxTts.IsEnabled = false;
+            ckbxListeningMode.IsChecked = false;
             ckbxListeningMode.IsEnabled = false;
+            ckbxContinuousListeningMode.IsChecked = false;
             ckbxContinuousListeningMode.IsEnabled = false;
         }
 
         private void ckbxCreateImage_Unchecked(object sender, RoutedEventArgs e)
         {
             ckbxMute.IsEnabled = true;
-            ckbxTts.IsEnabled = true;
             ckbxListeningMode.IsEnabled = true;
             ckbxContinuousListeningMode.IsEnabled = true;
             ckbxImageReview.IsEnabled = true;
@@ -1580,10 +1581,12 @@ namespace AssistantAi
 
         private void ckbxImageReview_Checked(object sender, RoutedEventArgs e)
         {
+            ckbxMute.IsChecked = true;
             ckbxMute.IsEnabled = false;
             ckbxListeningMode.IsEnabled = false;
             ckbxCreateImage.IsEnabled = false;
-            btnPickupFolder.IsEnabled = true;
+            ckbxContinuousListeningMode.IsEnabled = false;
+            btnPickupFolder.IsEnabled = true;            
             AddInstructionalText();
         }
 
@@ -1592,8 +1595,10 @@ namespace AssistantAi
             ckbxMute.IsEnabled = true;
             ckbxListeningMode.IsEnabled = true;
             ckbxCreateImage.IsEnabled = true;
+            ckbxContinuousListeningMode.IsEnabled = true;
             btnPickupFolder.IsEnabled = false;
             RemoveInstructionalText();
+            lblPickupFolder.Content = "";
         }
 
         private void ckbxMute_Checked(object sender, RoutedEventArgs e)
@@ -1610,7 +1615,11 @@ namespace AssistantAi
         {
             ckbxMute.IsEnabled = false;
             ckbxListeningMode.IsEnabled = false;
-            ckbxContinuousListeningMode.IsEnabled = false;          
+            ckbxContinuousListeningMode.IsEnabled = false;
+            ckbxImageReview.IsEnabled = false;
+            ckbxCreateImage.IsChecked = false;
+            ckbxCreateImage.IsEnabled = false;
+            btnGetImage.IsEnabled = false;            
         }
 
         private void ckbxckbxTts_Unchecked(object sender, RoutedEventArgs e)
@@ -1618,6 +1627,9 @@ namespace AssistantAi
             ckbxMute.IsEnabled = true;
             ckbxListeningMode.IsEnabled = true;
             ckbxContinuousListeningMode.IsEnabled = true;
+            ckbxImageReview.IsEnabled = true;
+            ckbxCreateImage.IsEnabled = true;
+            btnGetImage.IsEnabled = true;
         }
 
         private void AddInstructionalText()
