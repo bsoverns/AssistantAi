@@ -110,7 +110,7 @@ namespace AssistantAi
         //List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //o1 models are not available yet.
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
         List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd" }; //future use
-        List<string> whisperVoices = new List<string>() { "alloy", "echo", "fable", "onyx", "nova", "shimmer" };
+        List<string> whisperVoices = new List<string>() { "alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer" };
         List<string> audioFileQueue = new List<string>();
 
         private List<AudioRecorder> activeRecorders = new List<AudioRecorder>();
