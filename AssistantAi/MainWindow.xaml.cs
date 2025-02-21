@@ -131,7 +131,7 @@ namespace AssistantAi
 
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
-            defaultChatGptModel = @"gpt-4o",
+            defaultChatGptModel = @"gpt-4o-mini",
             defaultWhisperEndPoint = @"transcriptions",
             defaultWhisperModel = @"whisper-1",
             defaultAudioVoice = @"onyx",
