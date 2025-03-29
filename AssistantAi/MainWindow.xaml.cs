@@ -109,7 +109,7 @@ namespace AssistantAi
         //List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //o1 models are not available yet.
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
         List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd" }; //future use
-        List<string> whisperVoices = new List<string>() { "alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer" };
+        List<string> whisperVoices = new List<string>() { "alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse" };
         List<string> audioFileQueue = new List<string>();
 
         private List<AudioRecorder> activeRecorders = new List<AudioRecorder>();
@@ -134,8 +134,8 @@ namespace AssistantAi
             defaultWhisperEndPoint = @"transcriptions",
             defaultWhisperModel = @"whisper-1",
             defaultAudioVoice = @"onyx",
-            defaultImageModel = @"gpt-4-turbo", // @"gpt-4-vision-preview",
-            defaultTTSModel = @"tts-1",
+            defaultImageModel = @"gpt-4-turbo", // @"gpt-4-vision-preview",            
+            defaultTTSModel = @"gpt-4o-mini-tts", // One of the available TTS models: tts-1, tts-1-hd or gpt-4o-mini-tts.
             defaultDallesModel = @"dall-e-3",
             defaultDallesSize = @"1024x1024",
             recordingsDirectory,
@@ -608,6 +608,7 @@ namespace AssistantAi
                 {
                     model = defaultTTSModel,
                     input = textToConvert,
+                    instructions = "Speak in a tone that aligns with the sentence.  If it sounds happy, make it happy.  If it sounds sad, make it sad.  Angry...ect.ect...",
                     voice = voiceModel
                 };
 
