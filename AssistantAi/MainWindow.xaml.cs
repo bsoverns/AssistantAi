@@ -16,7 +16,6 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using YourNamespace;
 using System.Windows.Threading;
 using System.Drawing.Imaging;
 using AssistantAi.Class;
@@ -106,11 +105,11 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini", "gpt-4.5-preview", "o1-preview", "o1-mini" }; //These seem broken in the program, "gpt-4-32k" };
+        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini", "gpt-4.5-preview", "o1-preview", "o1-mini" }; 
         //List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //o1 models are not available yet.
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
         List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd" }; //future use
-        List<string> whisperVoices = new List<string>() { "alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer" };
+        List<string> whisperVoices = new List<string>() { "alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse" };
         List<string> audioFileQueue = new List<string>();
 
         private List<AudioRecorder> activeRecorders = new List<AudioRecorder>();
@@ -135,8 +134,8 @@ namespace AssistantAi
             defaultWhisperEndPoint = @"transcriptions",
             defaultWhisperModel = @"whisper-1",
             defaultAudioVoice = @"onyx",
-            defaultImageModel = @"gpt-4-turbo", // @"gpt-4-vision-preview",
-            defaultTTSModel = @"tts-1",
+            defaultImageModel = @"gpt-4-turbo", // @"gpt-4-vision-preview",            
+            defaultTTSModel = @"gpt-4o-mini-tts", // One of the available TTS models: tts-1, tts-1-hd or gpt-4o-mini-tts.
             defaultDallesModel = @"dall-e-3",
             defaultDallesSize = @"1024x1024",
             recordingsDirectory,
@@ -163,8 +162,36 @@ namespace AssistantAi
             InitializeCountdownTimer();
             _ = SetDefaultsAsync();
             _ = DownDetectorAsync();
-            TimerForApiCheck();
+            TimerForApiCheck();         
         }
+
+        //See if I can pull the models automatically, the problem is their modality is not listed in the API return data
+        public async Task<string> GetModelListAsync()
+        {
+            string sUrl = "https://api.openai.com/v1/models";
+
+            using (var httpClient = new HttpClient())
+            {
+                httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
+
+                try
+                {
+                    var response = await httpClient.GetAsync(sUrl);
+                    response.EnsureSuccessStatusCode();
+
+                    var sJson = await response.Content.ReadAsStringAsync();
+                    return sJson;
+                }
+                catch (HttpRequestException ex)
+                {
+                    LogWriter errorLog = new LogWriter();
+                    errorLog.WriteLog(errorLogDirectory, "Error fetching model list:\r\n" + ex.ToString());
+                    Console.WriteLine($"Request exception: {ex.Message}");
+                    return "";
+                }
+            }
+        }
+
 
         private async void OnSendButtonClick(object sender, RoutedEventArgs e)
         {
@@ -179,42 +206,6 @@ namespace AssistantAi
                 SpinnerStatus.Visibility = Visibility.Visible;
                 await SendMessage();
                 SpinnerStatus.Visibility = Visibility.Collapsed;
-
-                #region TestCode
-
-                /* All test code below; do not remove
-                //Whisper Speech return test
-                //string fileName = $"Speech_{DateTime.Now:yyyyMMddHHmmss}.wav";
-                //speechRecordingPath = System.IO.Path.Combine(speechDirectory, fileName);
-                //Directory.CreateDirectory(speechDirectory);
-                //txtWhisperSpeechResponse.Text = txtQuestion.Text;
-                //await WhisperTextToSpeechAsync(speechRecordingPath, txtQuestion.Text, @"onyx");                
-
-                //Whisper Transcriptions
-                //string fileName = $"Record_{DateTime.Now:yyyyMMddHHmmss}.wav";
-                //Directory.CreateDirectory(recordingsDirectory);
-                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, fileName);               
-                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Recording.m4a");
-
-                //Whisper Translations
-                //string fileName = $"Record_{DateTime.Now:yyyyMMddHHmmss}.wav";
-                //Directory.CreateDirectory(recordingsDirectory);
-                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "German.m4a");
-                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Telugu.m4a");
-                //currentRecordingPath = System.IO.Path.Combine(recordingsDirectory, "RecordingTests", "Polish.m4a");   
-
-                //Image Creations
-                //Directory.CreateDirectory(imageCreationDirectory);
-                //string fileName = $"DALLE_{DateTime.Now:yyyyMMddHHmmss}.png";
-                //currentImageCreationFilePath = System.IO.Path.Combine(imageCreationDirectory, fileName);
-                //GenerateImageAsync(txtQuestion.Text, currentImageCreationFilePath);
-
-                //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"transcriptions");
-                //var response = await WhisperMsgAsync(currentRecordingPath, @"whisper-1", @"translations");
-                //txtAssistantResponse.Text = response;  
-                */
-
-                #endregion TestCode
             }
 
             AssistantControls.IsEnabled = true;
@@ -617,6 +608,7 @@ namespace AssistantAi
                 {
                     model = defaultTTSModel,
                     input = textToConvert,
+                    instructions = "Speak in a tone that aligns with the sentence.  If it sounds happy, make it happy.  If it sounds sad, make it sad.  Angry...ect.ect...",
                     voice = voiceModel
                 };
 
@@ -1090,6 +1082,7 @@ namespace AssistantAi
 
             await LoadApiKey();
             await CheckApiKey();
+            //await GetModelListAsync();
             txtQuestion.Focus();
         }
 

@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 
-namespace YourNamespace
+namespace AssistantAi
 {
     public class AudioRecorder : IDisposable
     {
