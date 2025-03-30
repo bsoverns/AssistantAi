@@ -108,7 +108,7 @@ namespace AssistantAi
         List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini", "gpt-4.5-preview", "o1-preview", "o1-mini" }; 
         //List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //o1 models are not available yet.
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
-        List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd" }; //future use
+        List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd", @"gpt-4o-mini-tts" }; //future use
         List<string> whisperVoices = new List<string>() { "alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse" };
         List<string> audioFileQueue = new List<string>();
 
@@ -414,7 +414,7 @@ namespace AssistantAi
 
                         //string sAnswer = SendMsg(sQuestion) + "";
                         //string sAnswer = await SendMsgAsync(sQuestion) + "";
-                        await WhisperTextToSpeechAsync(speechRecordingPath, sQuestion, cmbAudioVoice.SelectedItem.ToString());
+                        await WhisperTextToSpeechAsync(speechRecordingPath, sQuestion, cmbVoiceModel.SelectedItem.ToString(), cmbAudioVoice.SelectedItem.ToString());
                     }
 
                     catch (Exception ex)
@@ -475,7 +475,7 @@ namespace AssistantAi
                                         
                     string sAnswer = sQuestion + "";
                     await AssistantResponseWindow("\r\nChat GPT Should be repeating this phrase: ", sAnswer);
-                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudioVoice.SelectedItem.ToString());
+                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbVoiceModel.SelectedItem.ToString(), cmbAudioVoice.SelectedItem.ToString());
                 }
 
                 catch (Exception ex)
@@ -504,7 +504,7 @@ namespace AssistantAi
                     //string sAnswer = SendMsg(sQuestion) + "";
                     string sAnswer = await SendMsgAsync(sQuestion) + "";
                     await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
-                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbAudioVoice.SelectedItem.ToString());
+                    await WhisperTextToSpeechAsync(speechRecordingPath, sAnswer, cmbVoiceModel.SelectedItem.ToString(), cmbAudioVoice.SelectedItem.ToString());
                 }
 
                 catch (Exception ex)
@@ -596,7 +596,7 @@ namespace AssistantAi
             }
         }
 
-        public async Task WhisperTextToSpeechAsync(string outputFilePath, string textToConvert, string voiceModel)
+        public async Task WhisperTextToSpeechAsync(string outputFilePath, string textToConvert, string tTsModel, string voiceModel)
         {
             string sUrl = "https://api.openai.com/v1/audio/speech";
 
@@ -606,7 +606,7 @@ namespace AssistantAi
 
                 var payload = new
                 {
-                    model = defaultTTSModel,
+                    model = tTsModel,
                     input = textToConvert,
                     instructions = "Speak in a tone that aligns with the sentence.  If it sounds happy, make it happy.  If it sounds sad, make it sad.  Angry...ect.ect...",
                     voice = voiceModel
@@ -1040,11 +1040,11 @@ namespace AssistantAi
                 cmbModel.Items.Add(model);
             }      
 
-            // Add items to cmbWhisperModel
+            // Add items to cmbVoice
             // https://platform.openai.com/docs/guides/speech-to-text
             foreach (var model in whisperEndPoints)
             {
-                cmbWhisperModel.Items.Add(model);
+                cmbVoice.Items.Add(model);
             }            
 
             // Adds audio voices currently active
@@ -1052,6 +1052,13 @@ namespace AssistantAi
             foreach (var voice in whisperVoices)
             {
                 cmbAudioVoice.Items.Add(voice);
+            }
+
+            // Add adio models
+            // https://platform.openai.com/docs/api-reference/audio/createSpeech
+            foreach (var audioModel in ttsModels)
+            {
+                cmbVoiceModel.Items.Add(audioModel);
             }
 
             // Set text for txtMaxTokens
@@ -1065,8 +1072,9 @@ namespace AssistantAi
 
             // Select default items by value
             cmbModel.SelectedItem = defaultChatGptModel;
-            cmbWhisperModel.SelectedItem = defaultWhisperEndPoint;
-            cmbAudioVoice.SelectedItem = defaultAudioVoice;            
+            cmbVoice.SelectedItem = defaultWhisperEndPoint;
+            cmbAudioVoice.SelectedItem = defaultAudioVoice;
+            cmbVoiceModel.SelectedItem = defaultTTSModel;
 
             // Set colors and fonts for txtQuestion
             txtQuestion.Background = new SolidColorBrush(Colors.LightGray);
@@ -1317,7 +1325,7 @@ namespace AssistantAi
             btnSend.IsEnabled = false;
             btnClear.IsEnabled = false;
             btnGetImage.IsEnabled = false;
-            cmbWhisperModel.IsEnabled = false; 
+            cmbVoice.IsEnabled = false; 
             cmbAudioVoice.IsEnabled = false;
             cmbModel.IsEnabled = false;
             ckbxMute.IsChecked = true;
@@ -1340,7 +1348,7 @@ namespace AssistantAi
             countdownTimer.Stop();
             //StopAudioRecording();
             StopAndDisposeRecorders();
-            string whisperType = cmbWhisperModel.Text;
+            string whisperType = cmbVoice.Text;
             var response = await WhisperMsgAsync(currentRecordingPath, defaultWhisperModel, whisperType);
             if (response != null)
             {               
@@ -1374,7 +1382,7 @@ namespace AssistantAi
 
                         //string sAnswer = SendMsg(sQuestion) + "";
                         await AssistantResponseWindow("\r\nWhisper Translate: ", response);
-                        await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
+                        await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbVoiceModel.SelectedItem.ToString(), cmbAudioVoice.SelectedItem.ToString());
                     }
 
                     catch (Exception ex)
@@ -1386,7 +1394,7 @@ namespace AssistantAi
                 }
             }
 
-            cmbWhisperModel.IsEnabled = true;
+            cmbVoice.IsEnabled = true;
             cmbAudioVoice.IsEnabled = true;
             cmbModel.IsEnabled = true;
             ckbxMute.IsEnabled = true;           
@@ -1419,7 +1427,7 @@ namespace AssistantAi
             SpinnerStatus.Visibility = Visibility.Visible;
             countdownTimer.Stop();
             StopAndDisposeRecorders();
-            string whisperType = cmbWhisperModel.Text;
+            string whisperType = cmbVoice.Text;
             for (int i = audioFileQueue.Count - 1; i >= 0; i--)
             {
                 string audioFile = audioFileQueue[i];
@@ -1456,7 +1464,7 @@ namespace AssistantAi
 
                             //string sAnswer = SendMsg(sQuestion) + "";
                             await AssistantResponseWindow("Whisper Translate: ", response);
-                            await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
+                            await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbVoiceModel.SelectedItem.ToString(), cmbAudioVoice.SelectedItem.ToString());
                         }
 
                         catch (Exception ex)
@@ -1481,7 +1489,7 @@ namespace AssistantAi
             btnSend.IsEnabled = false;
             btnClear.IsEnabled = false;
             btnGetImage.IsEnabled = false;
-            cmbWhisperModel.IsEnabled = false;
+            cmbVoice.IsEnabled = false;
             cmbAudioVoice.IsEnabled = false;
             cmbModel.IsEnabled = false;
             ckbxMute.IsChecked = true;
@@ -1498,7 +1506,7 @@ namespace AssistantAi
             btnSend.IsEnabled = true;
             btnClear.IsEnabled = true;
             btnGetImage.IsEnabled = true;
-            cmbWhisperModel.IsEnabled = true;
+            cmbVoice.IsEnabled = true;
             cmbAudioVoice.IsEnabled = true;
             cmbModel.IsEnabled = true;
             ckbxMute.IsEnabled = true;
@@ -1686,7 +1694,7 @@ namespace AssistantAi
 
         private async Task ContinuousSST()
         {
-            string whisperType = cmbWhisperModel.Text;
+            string whisperType = cmbVoice.Text;
             for (int i = 0; i <= audioFileQueue.Count - 1; i++)
             {
                 string audioFile = audioFileQueue[i];
@@ -1722,7 +1730,7 @@ namespace AssistantAi
                             Directory.CreateDirectory(speechDirectory);
 
                             await AssistantResponseWindow("", response, true);
-                            await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbAudioVoice.SelectedItem.ToString());
+                            await WhisperTextToSpeechAsync(speechRecordingPath, response, cmbVoiceModel.SelectedItem.ToString(), cmbAudioVoice.SelectedItem.ToString());
                         }
 
                         catch (Exception ex)
@@ -1738,9 +1746,9 @@ namespace AssistantAi
             }
         }
         
-        private void cmbWhisperModel_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        private void cmbVoice_SelectionChanged(object sender, SelectionChangedEventArgs e)
         {
-            string whisperType = cmbWhisperModel.SelectedItem.ToString();
+            string whisperType = cmbVoice.SelectedItem.ToString();
 
             if (whisperType == "transcriptions")
             {
