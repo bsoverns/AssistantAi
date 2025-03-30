@@ -3,19 +3,20 @@
   "WorkspaceRootPath": "C:\\Sandbox\\AssistantAi\\",
   "Documents": [
     {
-      "AbsoluteMoniker": "D:0:0:{A2FE74E1-B743-11D0-AE1A-00A0C90FFFC3}|\u003CMiscFiles\u003E|C:\\Users\\bsove\\AppData\\Local\\SourceServer\\223ca3c80201b0ccbe5b66fde184339b41c6b916e121d50675c121712988ae6d\\AssistantAi\\MainWindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
-    },
-    {
       "AbsoluteMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|c:\\sandbox\\assistantai\\assistantai\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|solutionrelative:assistantai\\mainwindow.xaml.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     },
     {
-      "AbsoluteMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|c:\\sandbox\\assistantai\\assistantai\\classes\\audiorecorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
-      "RelativeMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|solutionrelative:assistantai\\classes\\audiorecorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+      "AbsoluteMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|c:\\sandbox\\assistantai\\assistantai\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}",
+      "RelativeMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|solutionrelative:assistantai\\mainwindow.xaml||{F11ACC28-31D1-4C80-A34B-F4E09D3D753C}"
     },
     {
       "AbsoluteMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|c:\\sandbox\\assistantai\\assistantai\\classes\\logwriter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
       "RelativeMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|solutionrelative:assistantai\\classes\\logwriter.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
+    },
+    {
+      "AbsoluteMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|c:\\sandbox\\assistantai\\assistantai\\classes\\audiorecorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}",
+      "RelativeMoniker": "D:0:0:{9A5421A8-AD90-4985-BBF6-0B042B746075}|AssistantAi\\AssistantAi.csproj|solutionrelative:assistantai\\classes\\audiorecorder.cs||{A6C744A8-0E4A-4FC6-886A-064283054674}"
     }
   ],
   "DocumentGroupContainers": [
@@ -42,45 +43,44 @@
             {
               "$type": "Document",
               "DocumentIndex": 1,
-              "Title": "MainWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
-              "RelativeDocumentMoniker": "AssistantAi\\MainWindow.xaml.cs",
-              "ToolTip": "C:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
-              "RelativeToolTip": "AssistantAi\\MainWindow.xaml.cs",
-              "ViewState": "AgIAAFICAAAAAAAAAAAgwGICAAAjAAAAAAAAAA==",
-              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-29T01:20:00.942Z",
+              "Title": "MainWindow.xaml",
+              "DocumentMoniker": "C:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml",
+              "RelativeDocumentMoniker": "AssistantAi\\MainWindow.xaml",
+              "ToolTip": "C:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml",
+              "RelativeToolTip": "AssistantAi\\MainWindow.xaml",
+              "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.003549|",
+              "WhenOpened": "2025-03-30T16:36:23.793Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
               "DocumentIndex": 0,
               "Title": "MainWindow.xaml.cs",
-              "DocumentMoniker": "C:\\Users\\bsove\\AppData\\Local\\SourceServer\\223ca3c80201b0ccbe5b66fde184339b41c6b916e121d50675c121712988ae6d\\AssistantAi\\MainWindow.xaml.cs",
-              "RelativeDocumentMoniker": "..\\..\\Users\\bsove\\AppData\\Local\\SourceServer\\223ca3c80201b0ccbe5b66fde184339b41c6b916e121d50675c121712988ae6d\\AssistantAi\\MainWindow.xaml.cs",
-              "ToolTip": "C:\\Users\\bsove\\AppData\\Local\\SourceServer\\223ca3c80201b0ccbe5b66fde184339b41c6b916e121d50675c121712988ae6d\\AssistantAi\\MainWindow.xaml.cs",
-              "RelativeToolTip": "..\\..\\Users\\bsove\\AppData\\Local\\SourceServer\\223ca3c80201b0ccbe5b66fde184339b41c6b916e121d50675c121712988ae6d\\AssistantAi\\MainWindow.xaml.cs",
-              "ViewState": "AgIAAKIDAAAAAAAAAAAewLQDAAAuAAAAAAAAAA==",
+              "DocumentMoniker": "C:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
+              "RelativeDocumentMoniker": "AssistantAi\\MainWindow.xaml.cs",
+              "ToolTip": "C:\\Sandbox\\AssistantAi\\AssistantAi\\MainWindow.xaml.cs",
+              "RelativeToolTip": "AssistantAi\\MainWindow.xaml.cs",
+              "ViewState": "AgIAAPcBAAAAAAAAAAAcwAwCAAAIAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
-              "WhenOpened": "2025-03-29T01:20:13.447Z",
+              "WhenOpened": "2025-03-30T16:56:09.184Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 3,
+              "DocumentIndex": 2,
               "Title": "LogWriter.cs",
               "DocumentMoniker": "C:\\Sandbox\\AssistantAi\\AssistantAi\\Classes\\LogWriter.cs",
               "RelativeDocumentMoniker": "AssistantAi\\Classes\\LogWriter.cs",
               "ToolTip": "C:\\Sandbox\\AssistantAi\\AssistantAi\\Classes\\LogWriter.cs",
               "RelativeToolTip": "AssistantAi\\Classes\\LogWriter.cs",
-              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAwAAAAfAAAAAAAAAA==",
+              "ViewState": "AgIAAAAAAAAAAAAAAAAAAAQAAAAdAAAAAAAAAA==",
               "Icon": "ae27a6b0-e345-4288-96df-5eaf394ee369.000738|",
               "WhenOpened": "2025-03-21T13:02:57.118Z",
               "EditorCaption": ""
             },
             {
               "$type": "Document",
-              "DocumentIndex": 2,
+              "DocumentIndex": 3,
               "Title": "AudioRecorder.cs",
               "DocumentMoniker": "C:\\Sandbox\\AssistantAi\\AssistantAi\\Classes\\AudioRecorder.cs",
               "RelativeDocumentMoniker": "AssistantAi\\Classes\\AudioRecorder.cs",
