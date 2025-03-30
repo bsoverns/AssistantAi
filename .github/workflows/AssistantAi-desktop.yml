@@ -48,7 +48,8 @@ jobs:
   build:
     strategy:
       matrix:
-        configuration: [Debug, Release]
+        # configuration: [Debug, Release]
+        configuration: [Release]
 
     runs-on: windows-latest
 
