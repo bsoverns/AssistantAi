@@ -608,7 +608,7 @@ namespace AssistantAi
                 {
                     model = tTsModel,
                     input = textToConvert,
-                    instructions = "Speak in a tone that aligns with the sentence.  If it sounds happy, make it happy.  If it sounds sad, make it sad.  Angry...ect.ect...",
+                    instructions = "Speak in a tone that aligns with the tone of sentence.  If it sounds happy, make it happy.  If it sounds sad, make it sad.  Angry...ect.ect...",
                     voice = voiceModel
                 };
 
@@ -860,8 +860,8 @@ namespace AssistantAi
                     var response = await httpClient.PostAsync(sUrl, formData);
                     response.EnsureSuccessStatusCode();
                     var responseContent = await response.Content.ReadAsStringAsync();
-                    var parsedResponse = JsonConvert.DeserializeObject<Dictionary<string, string>>(responseContent);
-                    return parsedResponse.ContainsKey("text") ? parsedResponse["text"] : string.Empty;
+                    var jObject = JObject.Parse(responseContent);
+                    return jObject["text"]?.ToString() ?? string.Empty;
                 }
 
                 catch (HttpRequestException ex)
