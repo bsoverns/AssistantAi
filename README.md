@@ -34,4 +34,4 @@ If you find this project helpful or inspiring, consider supporting its developme
 - **Yellow**: Internet connectivity issues detected.
 - **Green**: API should be fully operational and accessible.
 
-![image](https://github.com/user-attachments/assets/4f31cdd3-ab90-4d34-853d-a6e2437d8feb)
+<img width="1395" height="1022" alt="image" src="https://github.com/user-attachments/assets/65a1ca19-b0be-428a-aada-d86e467f0264" />
