@@ -105,11 +105,11 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini", "gpt-4.5-preview", "o1-preview", "o1-mini" }; 
-        //List<string> gptModels = new List<string>() { "gpt-3.5-turbo", "gpt-4", "gpt-4-32k", "gpt-4o", "gpt-4o-mini" }; //o1 models are not available yet.
+        List<string> gptModels = new List<string>() { "gpt-5.4", "gpt-5", "gpt-5-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o", "gpt-4o-mini", "o3", "o3-mini", "o4-mini" };
+        List<string> realtimeModels = new List<string>() { "gpt-4o-realtime-preview", "gpt-4o-mini-realtime-preview" };
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
-        List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd", @"gpt-4o-mini-tts" }; //future use
-        List<string> whisperVoices = new List<string>() { "alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse" };
+        List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd", "gpt-4o-mini-tts" }; //future use
+        List<string> whisperVoices = new List<string>() { "alloy", "ash", "ballad", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse", "marin", "cedar" };
         List<string> audioFileQueue = new List<string>();
 
         private List<AudioRecorder> activeRecorders = new List<AudioRecorder>();
@@ -130,12 +130,14 @@ namespace AssistantAi
 
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
-            defaultChatGptModel = @"gpt-4o-mini",
+            defaultChatGptModel = @"gpt-5-mini",
+            defaultRealtimeModel = @"gpt-4o-mini-realtime-preview",
             defaultWhisperEndPoint = @"transcriptions",
-            defaultWhisperModel = @"whisper-1",
+            defaultWhisperModel = @"gpt-4o-mini-transcribe",
             defaultAudioVoice = @"onyx",
-            defaultImageModel = @"gpt-4-turbo", // @"gpt-4-vision-preview",            
-            defaultTTSModel = @"gpt-4o-mini-tts", // One of the available TTS models: tts-1, tts-1-hd or gpt-4o-mini-tts.
+            defaultImageModel = @"gpt-5-mini",
+            defaultTTSModel = @"gpt-4o-mini-tts",
+            //defaultDallesModel = @"gpt-image-1", --ERRORING            
             defaultDallesModel = @"dall-e-3",
             defaultDallesSize = @"1024x1024",
             recordingsDirectory,
@@ -381,7 +383,8 @@ namespace AssistantAi
                     {
                         SpinnerStatus.Visibility = Visibility.Visible;
                         string base64Image = EncodeImageToBase64(currentImageFilePath); // Provide the correct path
-                        string sAnswer = await SendImageMsgAsync(sQuestion, "jpeg", int.Parse(txtMaxTokens.Text), base64Image);
+                        //string sAnswer = await SendImageMsgAsync(sQuestion, "jpeg", int.Parse(txtMaxTokens.Text), base64Image);
+                        string sAnswer = await SendImageMsgAsync(sQuestion, "png", int.Parse(txtMaxTokens.Text), base64Image);
                         await AssistantResponseWindow("\r\nChat GPT: ", sAnswer);
                     }
 
@@ -651,10 +654,19 @@ namespace AssistantAi
             }
 
             string sModel = cmbModel.Text;
-            if (sModel != "gpt-4o" || sModel != "gpt-4o-mini")
+            switch (sModel)
             {
-                sModel = defaultImageModel;
-            }                          
+                case "gpt-4o":
+                case "gpt-4o-mini":
+                    break;
+                default:
+                    sModel = defaultImageModel;
+                    break;
+            }
+            //if (sModel != "gpt-4o"  sModel != "gpt-4o-mini" && sModel != "gpt-5-mini")
+            //{
+            //    sModel = defaultImageModel;
+            //}                          
 
             // Set up HttpClient
             using (var httpClient = new HttpClient())
@@ -714,6 +726,7 @@ namespace AssistantAi
             }
         }
 
+        //This is now broken, it needs to be updated.
         public async Task<string> SendMultipleImagesMsgAsync(string sQuestion, string imageType, string pickupFolder, int maxTokens)
         {
             using (var httpClient = new HttpClient())
@@ -742,9 +755,24 @@ namespace AssistantAi
                     contentList.Add(imageContent);
                 }
 
+                string sModel = cmbModel.Text;
+                switch (sModel)
+                {
+                    case "gpt-4o":
+                    case "gpt-4o-mini":
+                        break;
+                    default:
+                        sModel = defaultImageModel;
+                        break;
+                }
+                //if (sModel != "gpt-4o" || sModel != "gpt-4o-mini" || sModel != "gpt-5")
+                //{
+                //    sModel = defaultImageModel;
+                //}
+
                 var payload = new
                 {
-                    model = defaultImageModel,
+                    model = sModel,
                     messages = new[]
                     {
                         new
@@ -849,7 +877,8 @@ namespace AssistantAi
 
                 byte[] fileBytes = File.ReadAllBytes(audioFilePath);
                 var fileContent = new ByteArrayContent(fileBytes);
-                fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
+                //fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/mpeg");
+                fileContent.Headers.ContentType = new MediaTypeHeaderValue("audio/wav");
                 formData.Add(fileContent, "file", System.IO.Path.GetFileName(audioFilePath));
 
                 var modelContent = new StringContent(modelName);
@@ -985,7 +1014,8 @@ namespace AssistantAi
             }
         }
 
-        //Incomplete
+        //Incomplete and will never be completed because I am too lazy, unless I can automate this through some time of automated pull
+        //to a configuration file
         private static double CalculatePrice(int tokens, string modelName)
         {
             
