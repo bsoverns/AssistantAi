@@ -105,10 +105,11 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<string> gptModels = new List<string>() { "gpt-4o", "gpt-4o-mini", "o1-mini", "gpt-5", "gpt-5-mini" }; 
+        List<string> gptModels = new List<string>() { "gpt-5.4", "gpt-5", "gpt-5-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o", "gpt-4o-mini", "o3", "o3-mini", "o4-mini" };
+        List<string> realtimeModels = new List<string>() { "gpt-4o-realtime-preview", "gpt-4o-mini-realtime-preview" };
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
         List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd", "gpt-4o-mini-tts" }; //future use
-        List<string> whisperVoices = new List<string>() { "alloy", "ash", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse" };
+        List<string> whisperVoices = new List<string>() { "alloy", "ash", "ballad", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse", "marin", "cedar" };
         List<string> audioFileQueue = new List<string>();
 
         private List<AudioRecorder> activeRecorders = new List<AudioRecorder>();
@@ -129,12 +130,14 @@ namespace AssistantAi
 
         string programLocation = System.IO.Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location),
             openAIApiKey = @"",
-            defaultChatGptModel = @"gpt-4o-mini",
+            defaultChatGptModel = @"gpt-5-mini",
+            defaultRealtimeModel = @"gpt-4o-mini-realtime-preview",
             defaultWhisperEndPoint = @"transcriptions",
-            defaultWhisperModel = @"whisper-1",
+            defaultWhisperModel = @"gpt-4o-mini-transcribe",
             defaultAudioVoice = @"onyx",
-            defaultImageModel = @"gpt-4o-mini", // @"gpt-4-vision-preview",            
-            defaultTTSModel = @"gpt-4o-mini-tts", // One of the available TTS models: tts-1, tts-1-hd or gpt-4o-mini-tts.
+            defaultImageModel = @"gpt-5-mini",
+            defaultTTSModel = @"gpt-4o-mini-tts",
+            //defaultDallesModel = @"gpt-image-1", --ERRORING            
             defaultDallesModel = @"dall-e-3",
             defaultDallesSize = @"1024x1024",
             recordingsDirectory,
