@@ -42,6 +42,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
 
                     <!-- First set of controls -->
@@ -171,6 +172,26 @@
                         <Button Name="btnGetImage" Content="Get Image" Grid.Column="6" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left" Click="btnGetImage_Click"/>
                         <Button Name="btnResetImage" Content="Reset Image" Grid.Column="7" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left" IsEnabled="False" Click="btnResetImage_Click"/>
                         <Image Name="ImgPreviewImage" Grid.Column="8" Margin="8,8,0,0"/>
+                    </Grid>
+
+                    <!-- Sixth set of controls - Conversation Management -->
+                    <Grid Grid.Row="5">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="100" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="*" />
+                        </Grid.ColumnDefinitions>
+
+                        <Label Content="Conversation:" Grid.Column="0" Margin="8,8,0,4" HorizontalAlignment="Right" VerticalAlignment="Center"/>
+                        <ComboBox Name="cmbConversation" Grid.Column="1" Grid.ColumnSpan="4" Margin="8,8,0,4" DisplayMemberPath="DisplayText" SelectionChanged="cmbConversation_SelectionChanged"/>
+                        <Button Name="btnNewConversation" Content="New Chat" Grid.Column="5" Width="82" Height="24" Margin="8,8,0,4" HorizontalAlignment="Left" Click="btnNewConversation_Click"/>
+                        <Button Name="btnDeleteConversation" Content="Delete Chat" Grid.Column="6" Width="82" Height="24" Margin="8,8,0,4" HorizontalAlignment="Left" Click="btnDeleteConversation_Click"/>
                     </Grid>
 
                     <!-- Fifth set of controls -->

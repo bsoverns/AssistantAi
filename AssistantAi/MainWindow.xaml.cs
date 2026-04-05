@@ -105,12 +105,16 @@ namespace AssistantAi
     /// </summary>
     public partial class MainWindow : Window
     {
-        List<string> gptModels = new List<string>() { "gpt-5.4", "gpt-5", "gpt-5-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o", "gpt-4o-mini", "o3", "o3-mini", "o4-mini" };
+        List<string> gptModels = new List<string>() { "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano", "gpt-5", "gpt-5-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o", "gpt-4o-mini", "o3", "o3-pro", "o3-mini", "o4-mini" };
         List<string> realtimeModels = new List<string>() { "gpt-4o-realtime-preview", "gpt-4o-mini-realtime-preview" };
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
         List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd", "gpt-4o-mini-tts" }; //future use
         List<string> whisperVoices = new List<string>() { "alloy", "ash", "ballad", "coral", "echo", "fable", "onyx", "nova", "sage", "shimmer", "verse", "marin", "cedar" };
         List<string> audioFileQueue = new List<string>();
+
+        private AssistantAi.Classes.ConversationDatabase? _conversationDb;
+        private int _currentConversationId = 0;
+        private bool _isLoadingConversation = false;
 
         private List<AudioRecorder> activeRecorders = new List<AudioRecorder>();
         private MediaPlayer mediaPlayer;
@@ -527,66 +531,62 @@ namespace AssistantAi
         public async Task<string> SendMsgAsync(string sQuestion)
         {
             string sModel = cmbModel.Text;
-            string sUrl = "https://api.openai.com/v1/completions";
 
-            if (gptModels.Any(sub => sModel.Contains(sub)))
+            // Build message history for the API call
+            var messagesList = new List<object>();
+
+            if (_conversationDb != null && _currentConversationId > 0)
             {
-                sUrl = "https://api.openai.com/v1/chat/completions";
+                var history = await _conversationDb.GetMessagesAsync(_currentConversationId);
+
+                // Auto-name the conversation from the first user message
+                if (history.Count == 0)
+                {
+                    string autoName = sQuestion.Length > 50 ? sQuestion.Substring(0, 50) + "..." : sQuestion;
+                    await _conversationDb.RenameConversationAsync(_currentConversationId, autoName);
+                }
+
+                foreach (var msg in history)
+                    messagesList.Add(new { role = msg.Role, content = msg.Content });
             }
+
+            // Append the current user message (Newtonsoft handles JSON escaping — no manual PadInput needed)
+            messagesList.Add(new { role = "user", content = sQuestion });
 
             using (var httpClient = new HttpClient())
             {
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
 
-                object payload;
-                if (gptModels.Any(sub => sModel.Contains(sub)))
+                var payload = new
                 {
-                    payload = new
-                    {
-                        model = sModel,
-                        messages = new[] { new { role = "user", content = PadInput(sQuestion) } }
-                    };
-                }
-                else
-                {
-                    payload = new
-                    {
-                        model = sModel,
-                        prompt = PadInput(sQuestion),
-                        max_tokens = int.Parse(txtMaxTokens.Text),
-                        temperature = double.Parse(txtTemperature.Text),
-                        // Other parameters if needed
-                    };
-                }
+                    model = sModel,
+                    messages = messagesList.ToArray()
+                };
 
                 var data = JsonConvert.SerializeObject(payload);
                 var content = new StringContent(data, Encoding.UTF8, "application/json");
 
                 try
                 {
-                    var response = await httpClient.PostAsync(sUrl, content);
+                    var response = await httpClient.PostAsync("https://api.openai.com/v1/chat/completions", content);
                     response.EnsureSuccessStatusCode();
 
                     var sJson = await response.Content.ReadAsStringAsync();
-
-                    // Deserialize the JSON response
                     var oJson = JsonConvert.DeserializeObject<Dictionary<string, object>>(sJson);
-                    var oChoices = (JArray)oJson["choices"]; // Changed to JArray
-                    var oChoice = (JObject)oChoices[0]; // Changed to JObject
-                    string sResponse = "";
+                    var oChoices = (JArray)oJson["choices"];
+                    var oChoice = (JObject)oChoices[0];
+                    var oMessage = (JObject)oChoice["message"];
+                    string sResponse = ((string)oMessage["content"]).Trim();
 
-                    if (gptModels.Any(sub => sModel.Contains(sub)))
+                    // Save both messages to the conversation database
+                    if (_conversationDb != null && _currentConversationId > 0)
                     {
-                        var oMessage = (JObject)oChoice["message"];
-                        sResponse = (string)oMessage["content"];
+                        await _conversationDb.AddMessageAsync(_currentConversationId, "user", sQuestion, sModel);
+                        await _conversationDb.AddMessageAsync(_currentConversationId, "assistant", sResponse, sModel);
+                        await RefreshConversationListAsync();
                     }
 
-                    else
-                    {
-                        sResponse = (string)oChoice["text"];
-                    }
-
-                    return sResponse.Trim();
+                    return sResponse;
                 }
 
                 catch (HttpRequestException ex)
@@ -654,19 +654,9 @@ namespace AssistantAi
             }
 
             string sModel = cmbModel.Text;
-            switch (sModel)
-            {
-                case "gpt-4o":
-                case "gpt-4o-mini":
-                    break;
-                default:
-                    sModel = defaultImageModel;
-                    break;
-            }
-            //if (sModel != "gpt-4o"  sModel != "gpt-4o-mini" && sModel != "gpt-5-mini")
-            //{
-            //    sModel = defaultImageModel;
-            //}                          
+            // Use the selected model if it supports vision; fall back to the default image model otherwise
+            if (!gptModels.Contains(sModel))
+                sModel = defaultImageModel;
 
             // Set up HttpClient
             using (var httpClient = new HttpClient())
@@ -756,19 +746,8 @@ namespace AssistantAi
                 }
 
                 string sModel = cmbModel.Text;
-                switch (sModel)
-                {
-                    case "gpt-4o":
-                    case "gpt-4o-mini":
-                        break;
-                    default:
-                        sModel = defaultImageModel;
-                        break;
-                }
-                //if (sModel != "gpt-4o" || sModel != "gpt-4o-mini" || sModel != "gpt-5")
-                //{
-                //    sModel = defaultImageModel;
-                //}
+                if (!gptModels.Contains(sModel))
+                    sModel = defaultImageModel;
 
                 var payload = new
                 {
@@ -1120,6 +1099,21 @@ namespace AssistantAi
 
             await LoadApiKey();
             await CheckApiKey();
+
+            // Initialize conversation database
+            string dbPath = System.IO.Path.Combine(programLocation, @"Files\conversations.db");
+            _conversationDb = new AssistantAi.Classes.ConversationDatabase(dbPath);
+            var existingConversations = await _conversationDb.GetConversationsAsync();
+            if (existingConversations.Count == 0)
+            {
+                int newId = await _conversationDb.CreateConversationAsync($"Chat {DateTime.Now:yyyy-MM-dd HH:mm}");
+                await LoadConversationsAsync(newId);
+            }
+            else
+            {
+                await LoadConversationsAsync(existingConversations[0].Id);
+            }
+
             //await GetModelListAsync();
             txtQuestion.Focus();
         }
@@ -1971,6 +1965,126 @@ namespace AssistantAi
 
             return false;
         }
+
+        // ─── Conversation Management ──────────────────────────────────────────────
+
+        /// <summary>Loads all conversations into the ComboBox and optionally selects one by Id.</summary>
+        private async Task LoadConversationsAsync(int? selectId = null)
+        {
+            if (_conversationDb == null) return;
+
+            _isLoadingConversation = true;
+            try
+            {
+                var conversations = await _conversationDb.GetConversationsAsync();
+                cmbConversation.Items.Clear();
+                foreach (var conv in conversations)
+                    cmbConversation.Items.Add(conv);
+
+                if (conversations.Count > 0)
+                {
+                    var toSelect = selectId.HasValue
+                        ? conversations.Find(c => c.Id == selectId.Value) ?? conversations[0]
+                        : conversations[0];
+                    cmbConversation.SelectedItem = toSelect;
+                    _currentConversationId = toSelect.Id;
+                    await LoadConversationHistoryAsync(toSelect.Id);
+                }
+            }
+            finally
+            {
+                _isLoadingConversation = false;
+            }
+        }
+
+        /// <summary>Refreshes the conversation list without reloading the output window.</summary>
+        private async Task RefreshConversationListAsync()
+        {
+            if (_conversationDb == null) return;
+
+            _isLoadingConversation = true;
+            try
+            {
+                int currentId = _currentConversationId;
+                var conversations = await _conversationDb.GetConversationsAsync();
+                cmbConversation.Items.Clear();
+                foreach (var conv in conversations)
+                    cmbConversation.Items.Add(conv);
+
+                var toSelect = conversations.Find(c => c.Id == currentId);
+                if (toSelect != null)
+                    cmbConversation.SelectedItem = toSelect;
+            }
+            finally
+            {
+                _isLoadingConversation = false;
+            }
+        }
+
+        /// <summary>Rebuilds the output window from stored messages for the given conversation.</summary>
+        private async Task LoadConversationHistoryAsync(int conversationId)
+        {
+            if (_conversationDb == null) return;
+
+            txtAssistantResponse.Document.Blocks.Clear();
+            var messages = await _conversationDb.GetMessagesAsync(conversationId);
+            foreach (var msg in messages)
+            {
+                string prefix = msg.Role == "user" ? "\r\nMe: " : "\r\nChat GPT: ";
+                AppendTextToRichTextBox(prefix + msg.Content);
+            }
+            txtAssistantResponse.ScrollToEnd();
+        }
+
+        private async void cmbConversation_SelectionChanged(object sender, SelectionChangedEventArgs e)
+        {
+            if (_isLoadingConversation) return;
+            if (cmbConversation.SelectedItem is AssistantAi.Classes.ConversationEntry entry)
+            {
+                _currentConversationId = entry.Id;
+                await LoadConversationHistoryAsync(entry.Id);
+            }
+        }
+
+        private async void btnNewConversation_Click(object sender, RoutedEventArgs e)
+        {
+            if (_conversationDb == null) return;
+            int newId = await _conversationDb.CreateConversationAsync($"Chat {DateTime.Now:yyyy-MM-dd HH:mm}");
+            await LoadConversationsAsync(newId);
+            txtAssistantResponse.Document.Blocks.Clear();
+        }
+
+        private async void btnDeleteConversation_Click(object sender, RoutedEventArgs e)
+        {
+            if (_conversationDb == null || _currentConversationId == 0) return;
+
+            var result = System.Windows.MessageBox.Show(
+                "Delete this conversation and all its messages?",
+                "Confirm Delete",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (result == MessageBoxResult.Yes)
+            {
+                await _conversationDb.DeleteConversationAsync(_currentConversationId);
+                _currentConversationId = 0;
+
+                var remaining = await _conversationDb.GetConversationsAsync();
+                if (remaining.Count == 0)
+                {
+                    int newId = await _conversationDb.CreateConversationAsync($"Chat {DateTime.Now:yyyy-MM-dd HH:mm}");
+                    await LoadConversationsAsync(newId);
+                }
+                else
+                {
+                    await LoadConversationsAsync(remaining[0].Id);
+                }
+
+                txtAssistantResponse.Document.Blocks.Clear();
+            }
+        }
+
+        // ─────────────────────────────────────────────────────────────────────────
 
         public void UpdateTrafficLight(string color)
         {            
