@@ -106,6 +106,8 @@ namespace AssistantAi
     public partial class MainWindow : Window
     {
         List<string> gptModels = new List<string>() { "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano", "gpt-5", "gpt-5-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o", "gpt-4o-mini", "o3", "o3-pro", "o3-mini", "o4-mini" };
+        // Models confirmed to support image/vision input (o3-mini is text-only)
+        List<string> visionModels = new List<string>() { "gpt-5.4", "gpt-5.4-mini", "gpt-5.4-nano", "gpt-5", "gpt-5-mini", "gpt-4.1", "gpt-4.1-mini", "gpt-4.1-nano", "gpt-4o", "gpt-4o-mini", "o3", "o3-pro", "o4-mini" };
         List<string> realtimeModels = new List<string>() { "gpt-4o-realtime-preview", "gpt-4o-mini-realtime-preview" };
         List<string> whisperEndPoints = new List<string>() { "transcriptions", "translations" };
         List<string> ttsModels = new List<string>() { "tts-1", "tts-1-hd", "gpt-4o-mini-tts" }; //future use
@@ -115,6 +117,7 @@ namespace AssistantAi
         private AssistantAi.Classes.ConversationDatabase? _conversationDb;
         private int _currentConversationId = 0;
         private bool _isLoadingConversation = false;
+        private string? _previousModel = null; // Saved model before auto-switching for image modes
 
         private List<AudioRecorder> activeRecorders = new List<AudioRecorder>();
         private MediaPlayer mediaPlayer;
@@ -273,7 +276,14 @@ namespace AssistantAi
 
             finally
             {
-                this.Visibility = Visibility.Visible;                
+                this.Visibility = Visibility.Visible;
+                // Auto-switch to a vision-capable model if the current one doesn't support images
+                string currentModel = cmbModel.SelectedItem?.ToString() ?? "";
+                if (!visionModels.Contains(currentModel))
+                {
+                    _previousModel = currentModel;
+                    cmbModel.SelectedItem = defaultImageModel;
+                }
                 btnGetImage.IsEnabled = false;
                 btnResetImage.IsEnabled = true;
             }
@@ -299,6 +309,12 @@ namespace AssistantAi
                 finally
                 {
                     currentImageFilePath = null;
+                    // Restore the model that was active before the screenshot was taken
+                    if (_previousModel != null)
+                    {
+                        cmbModel.SelectedItem = _previousModel;
+                        _previousModel = null;
+                    }
                     btnGetImage.IsEnabled = true;
                     btnResetImage.IsEnabled = false;
                 }
@@ -654,8 +670,8 @@ namespace AssistantAi
             }
 
             string sModel = cmbModel.Text;
-            // Use the selected model if it supports vision; fall back to the default image model otherwise
-            if (!gptModels.Contains(sModel))
+            // Use the selected model only if it supports vision input; otherwise fall back
+            if (!visionModels.Contains(sModel))
                 sModel = defaultImageModel;
 
             // Set up HttpClient
@@ -746,7 +762,7 @@ namespace AssistantAi
                 }
 
                 string sModel = cmbModel.Text;
-                if (!gptModels.Contains(sModel))
+                if (!visionModels.Contains(sModel))
                     sModel = defaultImageModel;
 
                 var payload = new
@@ -1624,6 +1640,12 @@ namespace AssistantAi
             btnPickupFolder.IsEnabled = false;
             RemoveInstructionalText();
             lblPickupFolder.Content = "";
+            // Restore the model that was active before image review was enabled
+            if (_previousModel != null)
+            {
+                cmbModel.SelectedItem = _previousModel;
+                _previousModel = null;
+            }
         }
 
         private void ckbxMute_Checked(object sender, RoutedEventArgs e)
@@ -1678,6 +1700,13 @@ namespace AssistantAi
             {
                 string folderPath = folderBrowserDialog.SelectedPath;
                 lblPickupFolder.Content = folderPath;
+                // Auto-switch to a vision-capable model if the current one doesn't support images
+                string currentModel = cmbModel.SelectedItem?.ToString() ?? "";
+                if (!visionModels.Contains(currentModel))
+                {
+                    _previousModel = currentModel;
+                    cmbModel.SelectedItem = defaultImageModel;
+                }
             }
         }
 
