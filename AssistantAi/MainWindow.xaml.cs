@@ -35,7 +35,6 @@ namespace AssistantAi
     /* Notes on prices 02/10/2024
     https://openai.com/pricing#language-models
     "gpt-3.5-turbo", "gpt-3.5-turbo-16k", "gpt-4", "gpt-4-32k" 
-    test
 
     GPT-4 Turbo
     Model	Input	Output
