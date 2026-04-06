@@ -1,0 +1,46 @@
+<Window x:Class="AssistantAi.ApiKeyManager"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Update OpenAI API Key" Height="255" Width="680"
+        WindowStartupLocation="CenterScreen" ResizeMode="NoResize">
+
+    <Border Padding="10">
+        <StackPanel>
+            <GroupBox Header="Current API Key" Margin="0,0,0,6">
+                <Grid Margin="4,4,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="90"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="55"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Content="Current Key:" Grid.Column="0" VerticalAlignment="Center"/>
+                    <PasswordBox Name="pwdCurrentKey" Grid.Column="1" IsEnabled="False" Height="25" VerticalAlignment="Center" Margin="4,0"/>
+                    <TextBox Name="txtCurrentKeyVisible" Grid.Column="1" IsReadOnly="True" Visibility="Collapsed" Height="25" VerticalAlignment="Center" Margin="4,0" FontFamily="Courier New" FontSize="11"/>
+                    <Button Name="btnToggleCurrent" Content="Show" Grid.Column="2" Height="25" Width="50" HorizontalAlignment="Left" Click="btnToggleCurrent_Click"/>
+                </Grid>
+            </GroupBox>
+
+            <GroupBox Header="New API Key" Margin="0,0,0,6">
+                <Grid Margin="4,4,4,4">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="90"/>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="55"/>
+                    </Grid.ColumnDefinitions>
+                    <Label Content="New Key:" Grid.Column="0" VerticalAlignment="Center"/>
+                    <PasswordBox Name="pwdNewKey" Grid.Column="1" Height="25" VerticalAlignment="Center" Margin="4,0" PasswordChanged="pwdNewKey_PasswordChanged"/>
+                    <TextBox Name="txtNewKeyVisible" Grid.Column="1" Visibility="Collapsed" Height="25" VerticalAlignment="Center" Margin="4,0" FontFamily="Courier New" FontSize="11" TextChanged="txtNewKeyVisible_TextChanged"/>
+                    <Button Name="btnToggleNew" Content="Show" Grid.Column="2" Height="25" Width="50" HorizontalAlignment="Left" Click="btnToggleNew_Click"/>
+                </Grid>
+            </GroupBox>
+
+            <Label Name="lblStatus" Content="" Margin="2,0,0,4" HorizontalAlignment="Left" FontWeight="SemiBold"/>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,4,0,0">
+                <Button Name="btnTestKey" Content="Test Key" Width="85" Height="25" Margin="0,0,8,0" Click="btnTestKey_Click"/>
+                <Button Name="btnSaveKey" Content="Save Key" Width="85" Height="25" Margin="0,0,8,0" IsEnabled="False" Click="btnSaveKey_Click"/>
+                <Button Name="btnCancel" Content="Cancel" Width="85" Height="25" Click="btnCancel_Click"/>
+            </StackPanel>
+        </StackPanel>
+    </Border>
+</Window>

@@ -1223,8 +1223,21 @@ namespace AssistantAi
                 else
                 {
                     AssistantControls.IsEnabled = true;
-                }           
-            }                
+                }
+            }
+        }
+
+        private async void btnUpdateApiKey_Click(object sender, RoutedEventArgs e)
+        {
+            string apiKeyFilePath = System.IO.Path.Combine(programLocation, @"Files\ApiKey.json");
+            var keyManager = new ApiKeyManager(apiKeyFilePath, openAIApiKey);
+            keyManager.ShowDialog();
+
+            if (keyManager.KeyWasUpdated)
+            {
+                await LoadApiKey();
+                AssistantControls.IsEnabled = !string.IsNullOrEmpty(openAIApiKey);
+            }
         }
 
         private async Task AssistantResponseWindow(string typeResponse, string response, bool appendToLastParagraph = false)
