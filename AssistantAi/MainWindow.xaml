@@ -99,8 +99,7 @@
                         <Label Content="Whisper Model" Grid.Column="5" Margin="8,8,0,0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
                         <ComboBox Name="cmbVoice" Grid.Column="6" Grid.ColumnSpan="2"  Margin="8,8,0,0" SelectionChanged="cmbVoice_SelectionChanged"/>
                         <CheckBox Name="ckbxListeningMode" Content="Translate/Transcribe Mode" Grid.Column="8" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxListeningMode_Checked" Unchecked="ckbxListeningMode_Unchecked"/>
-                        <CheckBox Name="ckbxContinuousListeningMode" Content="Contiuous STT Mode" Grid.Column="10" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxSttMode_Checked" Unchecked="ckbxSttModeMode_Unchecked"/>
-                        <Button Name="btnUpdateApiKey" Content="Update API Key" Grid.Column="11" Height="24" Margin="8,8,8,0" VerticalAlignment="Center" Click="btnUpdateApiKey_Click"/>
+                        <CheckBox Name="ckbxContinuousListeningMode" Content="Contiuous STT Mode" Grid.Column="10" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxSttMode_Checked" Unchecked="ckbxSttModeMode_Unchecked"/>                        
                     </Grid>
 
                     <!-- Third set of controls -->
@@ -187,13 +186,19 @@
                             <ColumnDefinition Width="100" />
                             <ColumnDefinition Width="100" />
                             <ColumnDefinition Width="90" />
-                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />
+                            <ColumnDefinition Width="90" />                            
                         </Grid.ColumnDefinitions>
 
                         <Label Content="Conversation:" Grid.Column="0" Margin="8,8,0,4" HorizontalAlignment="Right" VerticalAlignment="Center"/>
                         <ComboBox Name="cmbConversation" Grid.Column="1" Grid.ColumnSpan="4" Margin="8,8,0,4" DisplayMemberPath="DisplayText" SelectionChanged="cmbConversation_SelectionChanged"/>
                         <Button Name="btnNewConversation" Content="New Chat" Grid.Column="5" Width="82" Height="24" Margin="8,8,0,4" HorizontalAlignment="Left" Click="btnNewConversation_Click"/>
                         <Button Name="btnDeleteConversation" Content="Delete Chat" Grid.Column="6" Width="82" Height="24" Margin="8,8,0,4" HorizontalAlignment="Left" Click="btnDeleteConversation_Click"/>
+                        <Button Name="btnUpdateApiKey" Content="Update API Key" Grid.Column="12" Grid.ColumnSpan="2" Height="24" Margin="8,8,8,0" VerticalAlignment="Center" Click="btnUpdateApiKey_Click"/>
                     </Grid>
 
                     <!-- Fifth set of controls -->
