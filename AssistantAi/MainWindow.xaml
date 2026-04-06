@@ -90,6 +90,7 @@
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="90" />
                             <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
                         </Grid.ColumnDefinitions>
 
                         <Button Name="btnClear" Content="Clear" Grid.Column="0" Click="OnClearButtonClick" Width="82" Height="24" Margin="8,8,0,0" HorizontalAlignment="Left"/>
@@ -98,7 +99,8 @@
                         <Label Content="Whisper Model" Grid.Column="5" Margin="8,8,0,0" HorizontalAlignment="Right" VerticalAlignment="Top"/>
                         <ComboBox Name="cmbVoice" Grid.Column="6" Grid.ColumnSpan="2"  Margin="8,8,0,0" SelectionChanged="cmbVoice_SelectionChanged"/>
                         <CheckBox Name="ckbxListeningMode" Content="Translate/Transcribe Mode" Grid.Column="8" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxListeningMode_Checked" Unchecked="ckbxListeningMode_Unchecked"/>
-                        <CheckBox Name="ckbxContinuousListeningMode" Content="Contiuous STT Mode" Grid.Column="10" Grid.ColumnSpan="2" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxSttMode_Checked" Unchecked="ckbxSttModeMode_Unchecked"/>
+                        <CheckBox Name="ckbxContinuousListeningMode" Content="Contiuous STT Mode" Grid.Column="10" Margin="8,8,0,0" VerticalAlignment="Center" Checked="ckbxSttMode_Checked" Unchecked="ckbxSttModeMode_Unchecked"/>
+                        <Button Name="btnUpdateApiKey" Content="Update API Key" Grid.Column="11" Height="24" Margin="8,8,8,0" VerticalAlignment="Center" Click="btnUpdateApiKey_Click"/>
                     </Grid>
 
                     <!-- Third set of controls -->
