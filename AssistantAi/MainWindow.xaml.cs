@@ -141,9 +141,11 @@ namespace AssistantAi
             defaultAudioVoice = @"onyx",
             defaultImageModel = @"gpt-5-mini",
             defaultTTSModel = @"gpt-4o-mini-tts",
-            //defaultDallesModel = @"gpt-image-1", --ERRORING            
-            defaultDallesModel = @"dall-e-3",
+            //dall-e-2 / dall-e-3 were shut down on the API May 12, 2026 -- they now return 400.
+            //Replacements: gpt-image-2 (latest), gpt-image-1.5, gpt-image-1, gpt-image-1-mini (cheapest).
+            defaultDallesModel = @"gpt-image-2",
             defaultDallesSize = @"1024x1024",
+            defaultDallesQuality = @"auto", //low | medium | high | auto
             recordingsDirectory,
             currentRecordingPath, 
             speechDirectory,
@@ -332,10 +334,10 @@ namespace AssistantAi
                     SpinnerStatus.Visibility = Visibility.Visible;
                     //Image Creations
                     Directory.CreateDirectory(imageCreationDirectory);
-                    string fileName = $"DALLE_{DateTime.Now:yyyyMMddHHmmss}.png";
+                    string fileName = $"GPTIMAGE_{DateTime.Now:yyyyMMddHHmmss}.png";
                     currentImageCreationFilePath = System.IO.Path.Combine(imageCreationDirectory, fileName);
                     await GenerateImageAsync(sQuestion, currentImageCreationFilePath);
-                    await AssistantResponseWindow("\r\nDALL-e: ", @"Below is an image located under: " + currentImageCreationFilePath.ToString() + "\r\n");
+                    await AssistantResponseWindow("\r\nGPT-IMAGE: ", @"Below is an image located under: " + currentImageCreationFilePath.ToString() + "\r\n");
                     await AssistantResponseWindowImageAdd(currentImageCreationFilePath);
                 }
 
@@ -1011,12 +1013,15 @@ namespace AssistantAi
             {
                 httpClient.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", openAIApiKey);
 
+                // gpt-image-* models don't accept response_format and always return base64 (b64_json).
                 var payload = new
                 {
                     model = defaultDallesModel,
                     prompt = prompt,
                     n = 1,
-                    size = defaultDallesSize
+                    size = defaultDallesSize,
+                    quality = defaultDallesQuality,
+                    output_format = "png"
                 };
 
                 var jsonPayload = JsonConvert.SerializeObject(payload);
@@ -1025,36 +1030,61 @@ namespace AssistantAi
                 try
                 {
                     var response = await httpClient.PostAsync(sUrl, content);
-                    response.EnsureSuccessStatusCode();
+                   var responseContent = await response.Content.ReadAsStringAsync();
 
-                    var responseContent = await response.Content.ReadAsStringAsync();
-                    var jsonResponse = JsonConvert.DeserializeObject<Dictionary<string, object>>(responseContent);
-                    var data = jsonResponse["data"] as JArray;
-                    var firstImage = data[0] as JObject;
-                    var imageUrl = firstImage["url"].ToString();
-
-                    // Download the image from the URL
-                    using (var imageClient = new HttpClient())
+                    if (!response.IsSuccessStatusCode)
                     {
-                        var imageResponse = await imageClient.GetAsync(imageUrl);
-                        imageResponse.EnsureSuccessStatusCode();
+                        // The API puts the real reason in the body, which EnsureSuccessStatusCode throws away.
+                        throw new HttpRequestException($"Image generation failed ({(int)response.StatusCode} {response.ReasonPhrase}): {responseContent}");
+                    }
 
-                        using (var imageStream = await imageResponse.Content.ReadAsStreamAsync())
+                    var jsonResponse = JObject.Parse(responseContent);
+                    var firstImage = jsonResponse["data"]?.FirstOrDefault() as JObject;
+
+                    if (firstImage == null)
+                    {
+                        throw new HttpRequestException($"Image generation returned no image data: {responseContent}");
+                    }
+
+                    var base64Image = firstImage["b64_json"]?.ToString();
+
+                    if (!string.IsNullOrEmpty(base64Image))
+                    {
+                        await File.WriteAllBytesAsync(outputFilePath, Convert.FromBase64String(base64Image));
+                    }
+
+                    else
+                    {
+                        // Older models returned a URL instead; keep the path working if one ever comes back.
+                        var imageUrl = firstImage["url"]?.ToString();
+
+                        if (string.IsNullOrEmpty(imageUrl))
                         {
-                            // Save the image to a file
-                            using (var fileStream = new FileStream(outputFilePath, FileMode.Create))
+                            throw new HttpRequestException($"Image generation response contained neither b64_json nor url: {responseContent}");
+                        }
+
+                        using (var imageClient = new HttpClient())
+                        {
+                            var imageResponse = await imageClient.GetAsync(imageUrl);
+                            imageResponse.EnsureSuccessStatusCode();
+
+                            using (var imageStream = await imageResponse.Content.ReadAsStreamAsync())
                             {
-                                await imageStream.CopyToAsync(fileStream);
+                                using (var fileStream = new FileStream(outputFilePath, FileMode.Create))
+                                {
+                                    await imageStream.CopyToAsync(fileStream);
+                                }
                             }
                         }
                     }
                 }
 
-                catch (HttpRequestException ex)
+                catch (Exception ex)
                 {
                     LogWriter errorLog = new LogWriter();
                     errorLog.WriteLog(errorLogDirectory, prompt + ":\r\n " + ex.ToString());
                     Console.WriteLine($"Request exception: {ex.Message}");
+                    throw; // let the caller report it instead of claiming an image was saved
                 }
             }
         }
