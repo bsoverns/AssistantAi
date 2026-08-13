@@ -315,4 +315,4 @@ node_modules/
 *.vsix
 
 # Claude Code
-.claude/worktrees/
+.claude/

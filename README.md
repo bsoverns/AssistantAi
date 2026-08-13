@@ -9,7 +9,7 @@ AssistantAi offers a versatile range of functionalities, including:
 1. Interaction with OpenAI's ChatGPT models (3.5, 4, 4o, and 4o mini).
 2. Usage of Whisper for transcription, translation, and speech processing.
 3. Integration with OpenAI's Vision capabilities.
-4. Ability to generate images using OpenAI's DALL-E.
+4. Ability to generate images using OpenAI's GPT Image models.
 5. Ability to use "Image Review Mode" to select a folder of PNG images and ask questions about them.  You will need to update the Max Tokens to ensure you get a full answer.
 
 ## Installation Guide
